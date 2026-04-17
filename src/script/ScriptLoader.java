@@ -56,7 +56,8 @@ public class ScriptLoader {
 		String urlstr=url.toString();
 		if (!urlstr.endsWith("cps") &&
 				!urlstr.endsWith("xmd") &&
-				!urlstr.endsWith("cmd")) {
+				!urlstr.endsWith("cmd") &&
+				!urlstr.endsWith("xml")) {
 			int len=urlstr.length();
 			CirclePack.cpb.errMsg("\""+urlstr.substring(0,10)+
 				"....."+urlstr.substring(len-5,len)+"\" is not a script");

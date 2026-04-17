@@ -29,6 +29,7 @@ public class ScriptHover extends HoverPanel {
 	public FWSJPanel stackArea;
 	public SCRIPTHandler scriptToolHandler;
 	public JPanel scriptPanel; // for 'PackControl.scriptBar' when open
+	public SimpleScriptPanel simplePanel;
 	
 	// Constructor
 	public ScriptHover() {
@@ -80,31 +81,65 @@ public class ScriptHover extends HoverPanel {
 
 		// create scriptToolHandler: side of canvas, dropable/named icons
 		scriptToolHandler = new SCRIPTHandler(null); // CPFileManager.getMyTFile("scriptctrl.myt"));
-		
+
 		// Why is this here? I think this is outdated, but must be overriden somewhere
 //		scriptToolHandler.toolBar.setBounds(0,0,PackControl.getActiveCanvasSize(),34);
 //		scriptToolHandler.toolBar.setBorder(new EmptyBorder(0,0,0,0));
-		
+
+		simplePanel = new SimpleScriptPanel();
+		simplePanel.setAlignmentX(0);
+
 		initScriptArea();
 	}
 	
 	public void setInitPanel() {
 		// TODO: have to figure out how to choose size.
-		this.add(stackScroll);
+		if (PackControl.scriptManager.simpleMode)
+			this.add(simplePanel);
+		else
+			this.add(stackScroll);
 	}
-	
+
 	public void loadHover() {
 		this.removeAll();
 		lockedFrame.setVisible(false);
 		PackControl.scriptBar.swapScriptBar(false);
-		this.add(stackScroll);
+		if (PackControl.scriptManager.simpleMode) {
+			this.add(simplePanel);
+			simplePanel.syncButtons();
+		} else {
+			this.add(stackScroll);
+		}
 	}
-	
+
 	public void loadLocked() {
 		this.removeAll();
 		this.add(scriptPanel);
 		PackControl.scriptBar.swapScriptBar(true);
-		this.add(stackScroll);
+		if (PackControl.scriptManager.simpleMode) {
+			this.add(simplePanel);
+			simplePanel.syncButtons();
+		} else {
+			this.add(stackScroll);
+		}
+	}
+
+	public void setSimpleMode(boolean simple) {
+		PackControl.scriptManager.simpleMode = simple;
+		// show/hide classic-editor-only controls
+		ScriptBundle.scriptEditBar.setVisible(!simple && isLocked());
+		ScriptBundle.openAllButton.setVisible(!simple && isLocked());
+		this.removeAll();
+		if (isLocked())
+			this.add(scriptPanel);
+		if (simple) {
+			simplePanel.loadFromTree(PackControl.scriptManager.cpScriptNode);
+			this.add(simplePanel);
+		} else {
+			this.add(stackScroll);
+		}
+		this.revalidate();
+		this.repaint();
 	}
 	
 	/**

@@ -265,9 +265,12 @@ public class FileDialogs {
 	 */
 	public static class ScriptFilter extends FileFilter {
 		public boolean accept(File f) {
-			return f.getName().toLowerCase().endsWith(".cmd")
-					|| f.getName().toLowerCase().endsWith(".xmd")
-					|| f.getName().toLowerCase().endsWith(".cps")
+			String n = f.getName().toLowerCase();
+			return n.endsWith(".cmd")
+					|| n.endsWith(".xmd")
+					|| n.endsWith(".cps")
+					|| n.endsWith(".cps.xml")
+					|| n.endsWith(".xml")
 					|| f.isDirectory();
 		}
 		public String getDescription() {

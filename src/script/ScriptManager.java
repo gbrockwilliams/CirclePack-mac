@@ -119,6 +119,8 @@ public class ScriptManager implements ActionListener {
 	public static final int INSERT_ABOVE = -1;
 	public static final int INSERT_BELOW = 1;
 
+	public boolean simpleMode = true;
+
 	// Constructors
 	public ScriptManager() {
 		scriptDescription=null;
@@ -159,6 +161,14 @@ public class ScriptManager implements ActionListener {
 		repopulateRecurse(cpDataNode);
 		cpDataNode.stackBox.redisplaySB(cpDataNode.stackBox.myWidth);
 		//<<<AF//
+		if (simpleMode && PackControl.scriptHover.simplePanel != null) {
+			try {
+				PackControl.scriptHover.simplePanel.loadFromTree(cpScriptNode);
+			} catch (Exception ex) {
+				System.err.println("SimpleScriptPanel.loadFromTree failed: " + ex);
+				ex.printStackTrace();
+			}
+		}
 	}
 
 	// ??? what was this for? (8/2010)
@@ -915,12 +925,13 @@ public class ScriptManager implements ActionListener {
 				 cb.redisplaySB(cb.myWidth);
 
 				 // set enabled status of "next" and "top" icons in all 'NextBundle's
-				 PackControl.scriptBar.nextBundle.enableNext((boolean)(nextCmdNode!=null));
-				 PackControl.vertScriptBar.nextBundle.enableNext((boolean)(nextCmdNode!=null));
-
-				 boolean ok=(boolean)(firstCmdNode!=null && nextCmdNode!=firstCmdNode);
-				 PackControl.scriptBar.nextBundle.enableTop(ok);
-				 PackControl.vertScriptBar.nextBundle.enableTop(ok);
+				 if (!simpleMode) {
+					 PackControl.scriptBar.nextBundle.enableNext((boolean)(nextCmdNode!=null));
+					 PackControl.vertScriptBar.nextBundle.enableNext((boolean)(nextCmdNode!=null));
+					 boolean ok=(boolean)(firstCmdNode!=null && nextCmdNode!=firstCmdNode);
+					 PackControl.scriptBar.nextBundle.enableTop(ok);
+					 PackControl.vertScriptBar.nextBundle.enableTop(ok);
+				 }
 
 				 return;
 			 }
@@ -936,10 +947,12 @@ public class ScriptManager implements ActionListener {
 		 //<<<AF//
 
 		 // set enabled status of "next" and "top" icons in all 'NextBundle's
-		 PackControl.scriptBar.nextBundle.enableNext(false);
-		 PackControl.vertScriptBar.nextBundle.enableNext(false);
-		 PackControl.scriptBar.nextBundle.enableTop((boolean)(firstCmdNode!=null));
-		 PackControl.vertScriptBar.nextBundle.enableTop((boolean)(firstCmdNode!=null));
+		 if (!simpleMode) {
+			 PackControl.scriptBar.nextBundle.enableNext(false);
+			 PackControl.vertScriptBar.nextBundle.enableNext(false);
+			 PackControl.scriptBar.nextBundle.enableTop((boolean)(firstCmdNode!=null));
+			 PackControl.vertScriptBar.nextBundle.enableTop((boolean)(firstCmdNode!=null));
+		 }
 
 		 return;
 	 }
@@ -948,6 +961,10 @@ public class ScriptManager implements ActionListener {
 	  * Need to cancel former nextCmdNode??
 	  */
 	 public void resetNextCmdNode() {
+		 if (simpleMode) {
+			 PackControl.scriptHover.simplePanel.resetToTop();
+			 return;
+		 }
 		 if (nextCmdNode!=null
 				 && (nextCmdNode.tntype==CPTreeNode.COMMAND
 				 || nextCmdNode.tntype==CPTreeNode.EDIT_CMDorMODE)) {
@@ -1080,8 +1097,10 @@ public class ScriptManager implements ActionListener {
 				 temp=new File(CPFileManager.HomeDirectory,name);
 			 }
 			 else temp = new File(name);
-			 if (temp==null || !temp.exists()) {
-				 // next, try in 'ScriptDirectory':
+			 if (temp==null) return null;
+			 // For absolute paths, trust the path and let openStream() validate.
+			 // For relative paths, use exists() to try the ScriptDirectory fallback.
+			 if (!temp.isAbsolute() && !temp.exists()) {
 				 temp=new File(CPFileManager.ScriptDirectory,name);
 				 if (!temp.exists()) {
 					 String errmsg=new String("Requested script '"+namE+"' not found");
@@ -1090,7 +1109,7 @@ public class ScriptManager implements ActionListener {
 					 return null;
 				 }
 			 }
-			 name=new String("file:"+temp.toString());
+			 name=new String("file://"+temp.getAbsolutePath());
 		 }
 		 else { // if from web, need to pick off file name from end
 			 int index=name.lastIndexOf(File.separatorChar);
@@ -1204,12 +1223,18 @@ public class ScriptManager implements ActionListener {
 		 if (filename==null || filename.length()==0) { 
 			 File f;
 			 try {
-				 if ((f=FileDialogs.loadDialog(FileDialogs.SCRIPT,true))!=null)
-					 filename=f.getCanonicalPath();
+				 if ((f=FileDialogs.loadDialog(FileDialogs.SCRIPT,true))!=null) {
+					 filename=f.getAbsolutePath();
+					 // macOS hides .xml extensions in the dialog; the real file may be filename+".xml"
+					 if (!f.exists()) {
+						 File withXml = new File(filename + ".xml");
+						 if (withXml.exists()) filename = withXml.getAbsolutePath();
+					 }
+				 }
 				 if (filename==null || filename.trim().length()==0)
 					 return 0;
 				 oName=new String(filename);
-			 } catch (IOException iox) {
+			 } catch (Exception iox) {
 				 throw new ParserException("dialog failed to get script name");
 			 }
 		 }
@@ -1339,6 +1364,9 @@ public class ScriptManager implements ActionListener {
 	  */
 	 public void executeCmdByKey(KeyEvent e,String key) {
 		 String cmd=findCmdByName(key,0); // find based on first char only
+		 // In simple mode, also search the text area for [key]:= prefixed lines
+		 if (cmd==null && simpleMode && PackControl.scriptHover.simplePanel!=null)
+			 cmd=PackControl.scriptHover.simplePanel.findNamedCmd(key.charAt(0));
 		 Component myComp=e.getComponent();
 		 if (cmd==null || !(myComp instanceof ActiveWrapper)) return;
 		 ActiveWrapper aWrapper=(ActiveWrapper)myComp;
@@ -1395,6 +1423,10 @@ public class ScriptManager implements ActionListener {
 	  * reset nextCmdNode.
 	  */
 	 public void executeNextCmd() {
+		 if (simpleMode) {
+			 PackControl.scriptHover.simplePanel.executeNext();
+			 return;
+		 }
 		 if (nextCmdNode == null)
 			 return;
 		 String s = getCommandString();
@@ -1532,6 +1564,10 @@ public class ScriptManager implements ActionListener {
 				 int n=CPBase.scriptManager.getScript(null,null,true);
 				 if (n>0) {
 					 ScriptBundle.m_locator.setSuccess();
+					 if (!PackControl.scriptHover.isLocked()) {
+						 PackControl.scriptHover.lockframe();
+						 PackControl.scriptHover.locked=true;
+					 }
 				 }
 			 } 
 			 // TODO: suspend until browser is fixed
@@ -1544,6 +1580,11 @@ public class ScriptManager implements ActionListener {
 				 if (tmpname!=null) {
 					 loadNamedScript(tmpname,tmpname,true);
 					 PackControl.aboutFrame.setVisible(false);
+					 // Auto-open the script window so the user can start typing immediately
+					 if (!PackControl.scriptHover.isLocked()) {
+						 PackControl.scriptHover.lockframe();
+						 PackControl.scriptHover.locked=true;
+					 }
 				 }
 				 else {
 					 String errmsg="Failed to create starter script";
@@ -1565,7 +1606,10 @@ public class ScriptManager implements ActionListener {
 			 else if (command.equals("SCRIPT:Save script")) {
 				 File f;
 				 if ((f=FileDialogs.saveDialog(FileDialogs.SCRIPT,true))!=null) {
-					 tnWriter.Write_from_TN(f);
+					 if (simpleMode)
+						 saveSimpleToFile(f);
+					 else
+						 tnWriter.Write_from_TN(f);
 					 hasChanged=false;
 					 try {
 						 ScriptBundle.m_locator.
@@ -1692,6 +1736,28 @@ public class ScriptManager implements ActionListener {
 		 
 		 ImageIcon iI=new ImageIcon(util.GetScaleImage.scaleBufferedImage(bI,AboutFrame.ABOUTWIDTH,AboutFrame.ABOUTHEIGHT));
 		 return iI;
+	 }
+
+	 private void saveSimpleToFile(File f) {
+		 java.util.List<String> cmds = PackControl.scriptHover.simplePanel.getCommands();
+		 try (BufferedWriter w = new BufferedWriter(new FileWriter(f))) {
+			 w.write("<?xml version=\"1.0\"?>\n");
+			 w.write("<CP_Scriptfile>\n");
+			 String title = (scriptName != null ? scriptName : "script");
+			 w.write("  <CPscript title=\"" + title + "\">\n");
+			 for (String cmd : cmds) {
+				 String esc = cmd.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
+				 w.write("    <cmd>" + esc + "</cmd>\n");
+			 }
+			 w.write("  </CPscript>\n");
+			 w.write("  <CPdata>\n");
+			 w.write("  </CPdata>\n");
+			 w.write("</CP_Scriptfile>\n");
+		 } catch (IOException ex) {
+			 String errmsg = "Error saving script: " + ex.getMessage();
+			 PackControl.consoleCmd.dispConsoleMsg(errmsg);
+			 PackControl.shellManager.recordError(errmsg);
+		 }
 	 }
 
 	 public boolean getOpenMode() {

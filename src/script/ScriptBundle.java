@@ -227,8 +227,21 @@ public class ScriptBundle extends JPanel implements ActionListener {
 		StackBox.setFixedSizes(scriptButton,110,24);
 //		nextBundle.setBounds(1,30,80,30);
 //		scriptButton.setBounds(90,34,110,24); 
+		JButton toggleEditorButton = new JButton("Classic Editor");
+		toggleEditorButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+		toggleEditorButton.setToolTipText("Switch between simple text editor and classic drag-drop editor");
+		toggleEditorButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				boolean nowSimple = !PackControl.scriptManager.simpleMode;
+				PackControl.scriptHover.setSimpleMode(nowSimple);
+				((JButton)e.getSource()).setText(nowSimple ? "Classic Editor" : "Simple Editor");
+			}
+		});
+		StackBox.setFixedSizes(toggleEditorButton, 110, 24);
+
 		bottomPanel.add(nextBundle);
 		bottomPanel.add(scriptButton);
+		bottomPanel.add(toggleEditorButton);
 		bottomPanel.add(scriptEditBar);
 		bottomPanel.add(openAllButton);
 		bottomPanel.add(Box.createHorizontalGlue());
@@ -368,9 +381,10 @@ public class ScriptBundle extends JPanel implements ActionListener {
 			pane.setPreferredSize(PackControl.ControlDim2);
 			PackControl.frame.pack();
 
-			// redo settings
-			scriptEditBar.setVisible(true);
-			openAllButton.setVisible(true);
+			// redo settings — hide classic-only controls in simple mode
+			boolean classic = !PackControl.scriptManager.simpleMode;
+			scriptEditBar.setVisible(classic);
+			openAllButton.setVisible(classic);
 			setPreferredSize(new Dimension(PackControl.ControlDim1.width-2,58));
 			ScriptBundle.scriptButton.setText("Close Script");
 			
