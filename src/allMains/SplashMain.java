@@ -4,7 +4,6 @@ package allMains;
 import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,25 +38,11 @@ public class SplashMain {
 	{
 		// read in the image
                 
-		boolean inJar=SplashMain.class.getProtectionDomain().getCodeSource()
-						.getLocation().toURI().getPath().endsWith(".jar");
-
 		BufferedImage image = null;
-		
-		if(inJar) {
-			System.out.println("inJar is true in SplashMain");
-			image = ImageIO.read(
-					getClass().getResourceAsStream(splashImageFilename)
-				);
-
-		}
-		else {
-			String imageFilename=new String("bin"+splashImageFilename);
-			try {
-				image =  ImageIO.read(new File(imageFilename));
-			} catch (Exception iio) {  // javax.imageio.IIOException
-				System.err.println("Splash screen failed, hopefully, program continues");
-			}
+		try {
+			image = ImageIO.read(getClass().getResourceAsStream(splashImageFilename));
+		} catch (Exception iio) {
+			System.err.println("Splash screen failed, hopefully, program continues");
 		}
 		
 		final BufferedImage fimage = image;

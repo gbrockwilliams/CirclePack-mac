@@ -89,8 +89,8 @@ public abstract class MyToolListener implements ActionListener {
 			/* ========== Contains a command? ======= */
 
 			String cpcmd=mt.getCommand();
-			if (!mt.isDropable() && cpcmd!=null && cpcmd.length()!=0) {
-				mt.execute(); 
+			if (cpcmd!=null && cpcmd.length()!=0) {
+				mt.execute();
 				return;
 			}
 			
