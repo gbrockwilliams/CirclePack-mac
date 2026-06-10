@@ -3,8 +3,17 @@ package frames;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.List;
+import javax.swing.SwingUtilities;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -625,6 +634,51 @@ public class TabbedPackDataHover extends FluidHoverPanel implements ActionListen
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		this.add(tabbedPane);
 		this.add(updateButton);
+
+		// Accept packing file drops (.p, .g, .q, .off, .pl) from Finder.
+		new DropTarget(this, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+			@Override
+			public void dragEnter(DropTargetDragEvent e) {
+				if (e.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
+					e.acceptDrag(DnDConstants.ACTION_COPY);
+				else
+					e.rejectDrag();
+			}
+			@Override
+			public void drop(DropTargetDropEvent e) {
+				if (!e.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+					e.rejectDrop();
+					return;
+				}
+				e.acceptDrop(DnDConstants.ACTION_COPY);
+				try {
+					@SuppressWarnings("unchecked")
+					List<File> files = (List<File>)
+						e.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+					for (File f : files) {
+						String name = f.getName().toLowerCase();
+						if (name.endsWith(".p") || name.endsWith(".g")
+								|| name.endsWith(".q") || name.endsWith(".off")
+								|| name.endsWith(".pl")) {
+							final int pn = CirclePack.cpb.getActivePackData().packNum;
+							final String path = f.getAbsolutePath();
+							// .g files are path files; others are packing files
+							final String cmd = name.endsWith(".g")
+								? "Read_p " + path + "; disp -w -g"
+								: "Read " + path + "; disp -w -c";
+							SwingUtilities.invokeLater(() ->
+								CPBase.trafficCenter.parseWrapper(
+									cmd,
+									CPBase.cpDrawing[pn].getPackData(),
+									false, true, 0, null));
+							e.dropComplete(true);
+							return;
+						}
+					}
+				} catch (Exception ex) {}
+				e.dropComplete(false);
+			}
+		});
 	}
 
 	/**
