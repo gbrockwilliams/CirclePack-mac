@@ -1034,6 +1034,8 @@ public class CommandStrParser {
 				  }
 				  if (type.startsWith("seed"))
 					  mode=1;
+				  else if (type.startsWith("brooks_tor") || type.startsWith("BT"))
+					  mode=17;
 				  else if (type.startsWith("hex_tor"))
 					  mode=12;
 				  else if (type.startsWith("hex") || type.startsWith("Hex"))
@@ -1373,6 +1375,41 @@ public class CommandStrParser {
 					  n=4;
 				  }
 				  newPack=PackCreation.hexCylinder(p, q, n);
+				  break;
+			  }
+			  case 17: // brooks_torus M N [cfrac seq]
+			  {
+				  int bM = param;   // M from the leading integer
+				  int bN = 3;
+				  try {
+					  bN = Integer.parseInt(items.get(0));
+					  items.remove(0);
+				  } catch (Exception ex) {}
+				  // boundary circles degenerate to bigons below 3
+				  if (bM < 3) bM = 3;
+				  if (bN < 3) bN = 3;
+				  java.util.ArrayList<Integer> cfList = new java.util.ArrayList<Integer>();
+				  while (items.size() > 0) {
+					  try {
+						  cfList.add(Integer.parseInt(items.remove(0)));
+					  } catch (Exception ex) { break; }
+				  }
+				  int[] cfrac = new int[cfList.size()];
+				  for (int ii = 0; ii < cfrac.length; ii++) cfrac[ii] = cfList.get(ii);
+				  int[][] cellCfrac = ftnTheory.BrooksTorus.uniformCfrac(bM, bN, cfrac);
+				  int[][] cellOfHolder = new int[1][];
+				  newPack = ftnTheory.BrooksTorus.build(bM, bN, cellCfrac, cellOfHolder);
+				  if (newPack != null) {
+					  jexecute(newPack, "repack");
+					  jexecute(newPack, "layout");
+					  try { // extender enables per-cell reparameterization
+						  new ftnTheory.BrooksTorusExtender(newPack,
+								  bM, bN, cellCfrac, cellOfHolder[0]);
+					  } catch (Exception ex) {
+						  CirclePack.cpb.msg("brooks_torus: extender not "+
+								  "attached ("+ex.getMessage()+")");
+					  }
+				  }
 				  break;
 			  }
 			  } // end of switch
@@ -2918,6 +2955,31 @@ public class CommandStrParser {
 	  } // end of 'm' and 'M'
 	  case 'n': // fall through
 	  {
+		  // ========= normalize_torus ========
+		  // Normalize a flat torus so the corner vertex is at 0 and the
+		  // adjacent corner (by horizontal period) is at 1.  Reports tau =
+		  // actual second period vector, so the fundamental domain corners
+		  // are 0, 1, 1+tau, tau.  Sets alpha to the corner vertex so
+		  // subsequent 'layout' calls maintain that position at the origin.
+		  if (cmd.startsWith("normalize_torus")) {
+			  if (!TorusData.isTopTorus(packData))
+				  throw new DataException("normalize_torus: packing is not a torus");
+			  TorusData td;
+			  try {
+				  td=new TorusData(packData);
+			  } catch (Exception ex) {
+				  throw new DataException("normalize_torus failed: "+ex.getMessage());
+			  }
+			  packData.setAlpha(td.cornerVert);
+			  Complex tau=td.teich;
+			  CirclePack.cpb.msg("normalize_torus: corner vertex "+td.cornerVert+
+					  " placed at origin");
+			  CirclePack.cpb.msg("  fundamental domain corners:  0,  1,  "+
+					  new Complex(1.0+tau.x,tau.y)+",  "+tau);
+			  CirclePack.cpb.msg("  tau = "+tau);
+			  return 1;
+		  }
+
 		  // ============ necklace ============
 	      if (cmd.startsWith("neckl")) {
 //	    	  items=(Vector<String>)flagSegs.get(0); // 
@@ -4889,6 +4951,58 @@ public class CommandStrParser {
 		  return 1;
 	  }
 	  
+	  // ========= tile_torus ========
+	  // Draw an (2m+1)x(2n+1) grid of copies of the fundamental domain,
+	  // tiled by the packing's current lattice period vectors.  Usage:
+	  //   tile_torus m n
+	  //   tile_torus m       (uses m for both directions)
+	  // Call 'normalize_torus' first for standard 0/1/tau/tau+1 corners.
+	  // Clears the canvas then draws all copies.
+	  if (cmd.startsWith("tile_torus")) {
+		  if (!TorusData.isTopTorus(packData))
+			  throw new DataException("tile_torus: packing is not a torus");
+		  int tm=2,tn=2;
+		  if (flagSegs.size()>0) {
+			  items=flagSegs.get(0);
+			  try { tm=Integer.parseInt(items.get(0)); } catch (Exception ex) {}
+			  try { tn=Integer.parseInt(items.get(1)); } catch (Exception ex) { tn=tm; }
+		  }
+		  // ensure side-pairings are set up
+		  if (packData.packDCEL.pairLink==null ||
+				  packData.packDCEL.pairLink.size()<5) {
+			  try { new TorusData(packData); }
+			  catch (Exception ex) {
+				  throw new DataException("tile_torus: could not set up "+
+						  "side-pairings: "+ex.getMessage());
+			  }
+		  }
+		  // lattice vectors from current corner positions
+		  ArrayList<Complex> corners=TorusData.getTorusCorners(packData);
+		  Complex c0=corners.get(1);           // corner at origin (after normalize)
+		  Complex t1=corners.get(2).minus(c0); // horizontal period
+		  Complex t2=corners.get(4).minus(c0); // vertical period (tau)
+
+		  CPdrawing cpd=packData.cpDrawing;
+		  cpd.clearCanvas(false);
+		  DispFlags dflags=new DispFlags("",cpd.fillOpacity);
+		  count=0;
+		  for (int p=-tm;p<=tm;p++) {
+			  for (int q=-tn;q<=tn;q++) {
+				  Complex off=t1.times((double)p).plus(t2.times((double)q));
+				  for (int v=1;v<=packData.nodeCount;v++) {
+					  Complex ctr=packData.getCenter(v).plus(off);
+					  double rad=packData.getRadius(v);
+					  cpd.drawCircle(ctr,rad,dflags);
+					  count++;
+				  }
+			  }
+		  }
+		  PackControl.canvasRedrawer.paintMyCanvasses(packData,false);
+		  CirclePack.cpb.msg("tile_torus: "+((2*tm+1)*(2*tn+1))+" copies, "+
+				  count+" circles total;  tau = "+c0.plus(t2));
+		  return count;
+	  }
+
 	  // ========= triG ===========
 	  // also see "create tri_gr" and "create j_ftn"
 	  if (cmd.startsWith("triG")) {

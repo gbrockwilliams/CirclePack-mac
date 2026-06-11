@@ -160,9 +160,8 @@ public class BrooksQuad extends PackExtender {
 		P=pnc; // new plug index
 
 		extenderPD.set_aim_default();
-		hvList.append("v");
 	}
-	
+
 	/**
 	 * A new 'horizontal' circle is one which is tangent to L and R (and T or B, 
 	 * depending). We do various interchanges of T/B and L/R depending on the

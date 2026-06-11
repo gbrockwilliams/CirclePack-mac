@@ -68,6 +68,10 @@ public class CursorCtrl {
 				new Point(2,18),"MAIN:");
 		new MULTImode(Integer.toString(N++),"main/pencil_plus.png",
 				new Point(2,18),"MAIN:");
+		new WELDmode(Integer.toString(N++),"main/mapping_pair.png",
+				new Point(8,8),"MAIN:");
+		new BROOKSmode(Integer.toString(N++),"main/gear.png",
+				new Point(8,8),"MAIN:");
 
 		// TODO: have to get the mode working again: one issue is MacOS,
 		//       another is how to prevent mouse presses from passing through
