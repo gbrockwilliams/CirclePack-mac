@@ -5117,6 +5117,8 @@ public class PackData{
 		  CombDCEL.fillInside(newDCEL);
 		  newDCEL.oldNew=oldnew;
 		  newPack=new PackData(null);
+		  newPack.hes=p1.hes; // else cloned radii/centers are
+		  	// misread as euclidean and 'fillcurves' fails
 		  newPack.attachDCEL(newDCEL);
 		  PackDCEL pdcel=newPack.packDCEL;
 		  newPack.vertexMap=newDCEL.oldNew;

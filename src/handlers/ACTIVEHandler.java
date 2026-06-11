@@ -53,6 +53,9 @@ public class ACTIVEHandler extends MyToolHandler {
 	}
 
 	public void setCanvasMode(MyCanvasMode mcm) {
+		// stateful modes (e.g. 'WELDmode') clear partial selections
+		if (activeWrapper.activeMode!=null && activeWrapper.activeMode!=mcm)
+			activeWrapper.activeMode.moreReset();
 		activeWrapper.activeMode=mcm;
 		activeWrapper.setCursor(mcm.modeCursor);
 		// TODO: change icon in Cursor button??
