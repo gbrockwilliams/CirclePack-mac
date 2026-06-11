@@ -193,10 +193,6 @@ public class SmallCanvasPanel extends JPanel {
 						int dest = hitTest(pt);
 						// Fallback: use whatever hover was tracked during drag
 						if (dest < 0) dest = dragHoverIdx;
-						System.err.println("SmallCanvas drag release: src=" + dragSourceIdx
-								+ " dest=" + dest + " storedHover=" + dragHoverIdx
-								+ " pt=" + pt + " bounds0=" + smallPanel[0].getBounds()
-								+ " bounds1=" + smallPanel[1].getBounds());
 						clearDragHighlight();
 						if (dest >= 0 && dest != dragSourceIdx) {
 							doCopyWithUndo(dragSourceIdx, dest);

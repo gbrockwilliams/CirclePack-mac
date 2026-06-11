@@ -89,13 +89,18 @@ public class ScriptBundle extends JPanel implements ActionListener {
 
 		// create/add 'MemComboBox' for history of scripts loaded
 		String cmdURLs=PackControl.preferences.getCmdURLfile();
-		if (cmdURLs.startsWith("~/")) 
-			cmdURLs=new String(CPFileManager.HomeDirectory+File.separator+cmdURLs.substring(2));
+		if (cmdURLs.startsWith("~/")) {
+			cmdURLs=CPFileManager.HomeDirectory+File.separator+cmdURLs.substring(2);
+		} else if (!cmdURLs.startsWith("/")) {
+			// relative path: anchor to ~/myCirclePack/ so history survives across sessions
+			cmdURLs=CPFileManager.HomeDirectory+File.separator+"myCirclePack"+File.separator+cmdURLs;
+		}
 		File file=new File(cmdURLs);
+		file.getParentFile().mkdirs(); // create parent dirs if needed
 		try {
 			file.createNewFile();
 		} catch (IOException iox) {
-			CirclePack.cpb.errMsg("failed to open xmd file");
+			CirclePack.cpb.errMsg("failed to create script history file: "+file);
 		}
 		m_locator = new MemComboBox(file);
 

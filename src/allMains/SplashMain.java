@@ -115,6 +115,21 @@ public class SplashMain {
 						if (CirclePack.cpb instanceof PackControl)
 							((PackControl) CirclePack.cpb).queryUserForQuit();
 					});
+				// File open: double-click .cps in Finder, or drop on Dock icon.
+				// If the app isn't fully started yet, store the path so startCirclePack picks it up.
+				if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE))
+					desktop.setOpenFileHandler(e -> {
+						for (java.io.File f : e.getFiles()) {
+							String path = f.getAbsolutePath();
+							if (CPBase.scriptManager == null) {
+								CPBase.initialScript = path;
+							} else {
+								EventQueue.invokeLater(() ->
+									CPBase.scriptManager.getScript(path, path, true));
+							}
+							break; // only open the first file
+						}
+					});
 			}
 
 			// execute the real main routine

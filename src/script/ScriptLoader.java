@@ -82,12 +82,16 @@ public class ScriptLoader {
 				parser.parse(workingURL.getFile());
 				doc = parser.getDocument();
 			} catch(Exception ex) {
-				if (PackControl.consoleCmd!=null) // this happens during startup
-					CirclePack.cpb.errMsg("Caught (probably) SAXParseException (for XML parsing) in loadng script.");
-				System.err.println(ex.getMessage());
-				ex.printStackTrace(System.err);
+				String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+				if (PackControl.consoleCmd!=null)
+					CirclePack.cpb.errMsg("Script parse error: "+detail);
+				javax.swing.JOptionPane.showMessageDialog(
+					PackControl.frame,
+					"Could not parse the script file — it may be corrupt or not a valid XML script.\n\n"+detail,
+					"Script Load Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE);
 				return false;
-			} 
+			}
 
 			processXMLDocument(doc);
 			
@@ -98,12 +102,16 @@ public class ScriptLoader {
 
 			manager.hasChanged = false;
 		} catch (Exception exc) {
-			if (PackControl.consoleCmd!=null) // this happens during startup
-				CirclePack.cpb.errMsg("An exception occurred in loadScript.");
-			System.err.println(exc.getMessage());
-			exc.printStackTrace(System.err);
+			String detail = exc.getMessage() != null ? exc.getMessage() : exc.getClass().getSimpleName();
+			if (PackControl.consoleCmd!=null)
+				CirclePack.cpb.errMsg("Script load error: "+detail);
+			javax.swing.JOptionPane.showMessageDialog(
+				PackControl.frame,
+				"An error occurred while loading the script:\n\n"+detail,
+				"Script Load Error",
+				javax.swing.JOptionPane.ERROR_MESSAGE);
 			PackControl.scriptHover.
-				initScriptArea(PackControl.scriptHover.stackArea.getWidth()); // reinitialize default
+				initScriptArea(PackControl.scriptHover.stackArea.getWidth());
 			return false;
 		}
 

@@ -89,6 +89,10 @@ public class ScriptHover extends HoverPanel {
 		simplePanel = new SimpleScriptPanel();
 		simplePanel.setAlignmentX(0);
 
+		// Accept script-file drops in classic-editor mode (simple mode handles its own).
+		SimpleScriptPanel.installFileDrop(stackScroll);
+		SimpleScriptPanel.installFileDrop(stackArea);
+
 		initScriptArea();
 	}
 	
