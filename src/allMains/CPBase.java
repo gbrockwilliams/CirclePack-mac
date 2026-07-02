@@ -227,13 +227,23 @@ public abstract class CPBase {
 		if( CPBase.sharedinstance==null )
 			CPBase.sharedinstance=this;
 		
-		// load *.exe files into TempDirectory
+		// load Delaunay helper executables into TempDirectory
 //	    System.out.println("temp directory is: "+System.getProperty("java.io.tmpdir"));
-		boolean goodtogo=
-				(extractExeFiles(System.getProperty("java.io.tmpdir"),"triangle.exe")
-						&& extractExeFiles(System.getProperty("java.io.tmpdir"),"qhull.exe"));
+		String tmpdir=System.getProperty("java.io.tmpdir");
+		boolean goodtogo;
+		if (System.getProperty("os.name").toLowerCase().contains("win"))
+			goodtogo=(extractExeFiles(tmpdir,"triangle.exe")
+					&& extractExeFiles(tmpdir,"qhull.exe"));
+		else { // mac/linux: native binaries, if bundled in resources
+			boolean t=extractExeFiles(tmpdir,"triangle");
+			boolean q=extractExeFiles(tmpdir,"qhull");
+			if (t) new java.io.File(tmpdir,"triangle").setExecutable(true);
+			if (q) new java.io.File(tmpdir,"qhull").setExecutable(true);
+			goodtogo=(t && q);
+		}
 		if (!goodtogo) {
-			System.err.println("Failed to load all the executables");
+			System.err.println("Delaunay executables (triangle/qhull) not "+
+					"all available; only needed for random triangulations");
 		}
 		
 		scriptManager=null;
@@ -277,6 +287,8 @@ public abstract class CPBase {
 			System.err.println("Didn't get InputStream for executables in 'CPBase'");
 			return false;
 		}
+		if (ins==null) // not bundled (e.g. no native binary for this OS)
+			return false;
 		
         try {
             java.io.File f = new java.io.File(destDir + java.io.File.separator + execName);

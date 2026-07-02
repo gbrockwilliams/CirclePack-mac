@@ -27,6 +27,25 @@ import util.StringUtil;
  *
  */
 public class ProcessDelaunay {
+
+	/**
+	 * Locate a Delaunay helper executable ('triangle' or 'qhull'):
+	 * in 'codedir' (startup extracts bundled binaries there) under
+	 * its plain or '.exe' name, else fall back to the bare name so
+	 * a copy on the user's PATH (e.g. homebrew qhull) is found.
+	 * (Replaces a hardcoded '\\' separator that broke non-Windows.)
+	 * @param codedir File
+	 * @param name String
+	 * @return String command
+	 */
+	static String findExec(File codedir,String name) {
+		File f=new File(codedir,name);
+		if (f.exists())
+			return f.getPath();
+		if (new File(codedir,name+".exe").exists())
+			return new File(codedir,name+".exe").getPath();
+		return name; // hope it's on PATH
+	}
 	static int localID=0;
 
 	/**
@@ -76,7 +95,7 @@ public class ProcessDelaunay {
 		ProcessBuilder pb = new ProcessBuilder();
 		pb.directory(codedir);
 		ArrayList<String> strlist = new ArrayList<String>();
-		strlist.add(new String(codedir.toString() + "\\qhull"));
+		strlist.add(findExec(codedir,"qhull"));
 		strlist.add("i");
 		strlist.add("TI");
 		strlist.add(infile.toString());
@@ -214,7 +233,7 @@ public class ProcessDelaunay {
 		ProcessBuilder pb = new ProcessBuilder();
 		pb.directory(codedir);
 		ArrayList<String> strlist = new ArrayList<String>();
-		strlist.add(new String(codedir.toString() + "\\triangle"));
+		strlist.add(findExec(codedir,"triangle"));
 		// flags for .poly file and suppressing other output
 		if (deldata.bdryCount>0) 
 			strlist.add("-pPN"); 
