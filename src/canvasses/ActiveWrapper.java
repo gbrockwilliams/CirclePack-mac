@@ -280,6 +280,23 @@ public class ActiveWrapper extends JPanel implements KeyListener,
 		int width  = mwe.getComponent().getWidth();
 		int height = mwe.getComponent().getHeight();
 
+		if (!mwe.isControlDown()) {
+			// plain scroll (two-finger trackpad scroll): pan vertically,
+			// Shift+scroll pans horizontally (Mac convention; trackpads
+			// send horizontal scrolls as shift+wheel)
+			double amount = delta*0.05;
+			try {
+				if (mwe.isShiftDown())
+					cpDrawing.realBox.transView(-amount*cpDrawing.XWidth,0.0);
+				else
+					cpDrawing.realBox.transView(0.0,amount*cpDrawing.YHeight);
+				cpDrawing.update(2);
+				TrafficCenter.cmdGUI(cpDrawing.getPackData(), "disp -wr");
+			} catch (Exception ex) { return; }
+			repaint();
+			return;
+		}
+
 		if (mwe.isControlDown()) {
 			// Pinch-to-zoom or Ctrl+scroll. Negative delta = zoom in.
 			double factor = Math.pow(1.05, delta);
