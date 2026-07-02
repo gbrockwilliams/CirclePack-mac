@@ -145,7 +145,11 @@ public class WeldManager extends PackExtender {
 		extensionAbbrev="CW";
 		toolTip="'WeldManager': handling 'conformal welding' operations";
 		weldListFileName=new String("weldList_"+CPBase.debugID+".w");
-		registerXType();
+		try {
+			registerXType();
+		} catch (Throwable t) {
+			// GUI icon registration fails headless; extender still works
+		}
 		if (running) {
 			extenderPD.packExtensions.add(this);
 		}
@@ -928,11 +932,15 @@ public class WeldManager extends PackExtender {
 		q.elist = new EdgeLink(q, buf);
 
 		// Adjoin p and q?
-		if (opt_flag>0) { 
+		if (opt_flag>0) {
+			if (q.bdryStarts==null) // DCEL-built packs don't set this
+				q.bdryStarts=new int[20]; // PackData.MAX_COMPONENTS
 			q.bdryStarts[1] = w_orig;
 
+			// clone q's DCEL: 'adjoin' absorbs its second argument's
+			// edges, which would leave the original q corrupted
 			p.packDCEL=CombDCEL.adjoin(p.packDCEL,
-				q.packDCEL, v_orig, w_orig, count);
+				CombDCEL.cloneDCEL(q.packDCEL), v_orig, w_orig, count);
 			p.packDCEL.fixDCEL(p);
 				// TODO: note that 'adjoin' pastes p clockwise, q
 				//   counterclockwise; no problem for full bdry, but 
