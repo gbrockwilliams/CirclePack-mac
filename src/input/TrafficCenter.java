@@ -99,6 +99,7 @@ public class TrafficCenter {
 						System.out.flush();
 					}
 					CPBase.runSpinner.startstop(true);
+					util.BusyCursor.push();
 //					System.out.println("set owl on");
 					try {
 						ResultPacket rP=new ResultPacket(packData,cmdf);
@@ -108,6 +109,8 @@ public class TrafficCenter {
 					} catch (Exception ex) {
 						CirclePack.cpb.errMsg("'TrafficCenter' work thread error: "
 								+ ex.getMessage());
+					} finally {
+						util.BusyCursor.pop();
 					}
 					CPBase.runSpinner.startstop(false);
 //					System.out.println("turn owl off");

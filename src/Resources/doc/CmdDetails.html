@@ -5285,7 +5285,7 @@ of circles with that particular edge displayed.</td></tr>
 	having affine scaling by factors A and B, defaulting to
 	1 and 1.
 </blockquote>
-<font size="+1" color="blue"><strong><a name="tile_torus">tile_torus</a></strong></font>&nbsp;&nbsp; <font face="sans-serif">[m [n]]&nbsp;&nbsp; </font>
+<font size="+1" color="blue"><strong><a name="tile_torus">tile_torus</a></strong></font>&nbsp;&nbsp; <font face="sans-serif">[m [n]] [-{fct}..]&nbsp;&nbsp; </font>
 <blockquote>
 <strong>Description: </strong>
 	Display a euclidean torus as a doubly-periodic tiling of the
@@ -5293,7 +5293,13 @@ of circles with that particular edge displayed.</td></tr>
 	copies of the fundamental domain is drawn, each circle
 	shifted by integer combinations of the two lattice period
 	vectors. Defaults are m=n=2; "tile_torus m" uses m in both
-	directions. Side-pairings are set up automatically if
+	directions. Optional flags in the usual 'disp' style choose
+	what is drawn, in the order given: '-c' circles, '-cf'
+	filled circles, '-f' faces, '-ff' filled faces; options
+	follow as in 'disp' (color codes, 't{t}' thickness) and
+	objects use their stored colors when no color is given —
+	e.g. "tile_torus 2 -cf", "tile_torus 3 -ff -c".
+	Side-pairings are set up automatically if
 	missing. Run 'normalize_torus' first to get the standard
 	0, 1, 1+tau, tau corners. Only flat tori can be tiled by
 	translation; affine tori are rejected. The tiling is recorded
@@ -5306,6 +5312,9 @@ of circles with that particular edge displayed.</td></tr>
 <td width="63%">
 	build a Brooks torus, normalize it, and show 25 lattice
 	copies</td></tr>
+<tr><td width="35%"><font color="blue">tile_torus 2 -ff -c</font></td>
+<td width="63%">
+	the same tiling with filled faces and circle outlines</td></tr>
 </table></blockquote>
 <strong>&nbsp;&nbsp;&nbsp;&nbsp; See Also:</strong>
 &nbsp;&nbsp;&nbsp; <a href="normalize_torus">normalize_torus</a>&nbsp;&nbsp; <a href="torus_t">torus_t</a>&nbsp;&nbsp; <a href="create">create</a>&nbsp;&nbsp; 

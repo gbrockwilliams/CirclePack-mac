@@ -4972,11 +4972,27 @@ public class CommandStrParser {
 			  throw new DataException("tile_torus: packing must be "+
 					  "euclidean (try 'geom_to_e' and 'repack;layout')");
 		  int tm=2,tn=2;
-		  if (flagSegs.size()>0) {
-			  items=flagSegs.get(0);
-			  try { tm=Integer.parseInt(items.get(0)); } catch (Exception ex) {}
-			  try { tn=Integer.parseInt(items.get(1)); } catch (Exception ex) { tn=tm; }
+		  // disp-style object flags, drawn in order: "-c.." circles,
+		  // "-f.." faces; e.g. "-ff" filled faces, "-cf190" filled
+		  // circles with color 190. Default: plain circles.
+		  ArrayList<String> objFlags=new ArrayList<String>();
+		  for (int fsi=0;fsi<flagSegs.size();fsi++) {
+			  items=flagSegs.get(fsi);
+			  if (items.size()>0 && items.get(0).startsWith("-")) {
+				  String str=items.get(0).substring(1);
+				  if (str.length()==0 ||
+						  (str.charAt(0)!='c' && str.charAt(0)!='f'))
+					  throw new ParserException("tile_torus: flags must "+
+							  "start with 'c' (circles) or 'f' (faces)");
+				  objFlags.add(str);
+			  }
+			  else {
+				  try { tm=Integer.parseInt(items.get(0)); } catch (Exception ex) {}
+				  try { tn=Integer.parseInt(items.get(1)); } catch (Exception ex) { tn=tm; }
+			  }
 		  }
+		  if (objFlags.size()==0)
+			  objFlags.add("c");
 		  if (tm<0) tm=-tm;
 		  if (tn<0) tn=-tn;
 		  // ensure side-pairings are set up
@@ -5006,24 +5022,60 @@ public class CommandStrParser {
 
 		  CPdrawing cpd=packData.cpDrawing;
 		  cpd.clearCanvas(false);
-		  DispFlags dflags=new DispFlags("",cpd.fillOpacity);
 		  count=0;
-		  for (int p=-tm;p<=tm;p++) {
-			  for (int q=-tn;q<=tn;q++) {
-				  Complex off=t1.times((double)p).plus(t2.times((double)q));
-				  for (int v=1;v<=packData.nodeCount;v++) {
-					  Complex ctr=packData.getCenter(v).plus(off);
-					  double rad=packData.getRadius(v);
-					  cpd.drawCircle(ctr,rad,dflags);
-					  count++;
+		  util.BusyCursor.push(); // drawing loop can be slow for large m,n
+		  try {
+			  for (int fi=0;fi<objFlags.size();fi++) {
+				  String objStr=objFlags.get(fi);
+				  char objCode=objStr.charAt(0); // 'c' or 'f'
+				  DispFlags dflags=new DispFlags(objStr.substring(1),
+						  cpd.fillOpacity);
+				  for (int p=-tm;p<=tm;p++) {
+					  for (int q=-tn;q<=tn;q++) {
+						  Complex off=t1.times((double)p).plus(t2.times((double)q));
+						  if (objCode=='f') { // faces
+							  for (int f=1;f<=packData.faceCount;f++) {
+								  combinatorics.komplex.DcelFace face=
+										  packData.packDCEL.faces[f];
+								  Complex []pts=packData.packDCEL.
+										  getFaceCorners(face);
+								  // no color given? face's stored color
+								  // (as the 'disp' face loop does)
+								  if (!dflags.colorIsSet)
+									  dflags.setColor(packData.getFaceColor(f));
+								  cpd.drawFace(pts[0].plus(off),
+										  pts[1].plus(off),pts[2].plus(off),
+										  null,null,null,dflags);
+								  count++;
+							  }
+						  }
+						  else { // circles
+							  for (int v=1;v<=packData.nodeCount;v++) {
+								  Complex ctr=packData.getCenter(v).plus(off);
+								  double rad=packData.getRadius(v);
+								  // no color given? circle's stored color
+								  if (!dflags.colorIsSet &&
+										  (dflags.fill || dflags.colBorder))
+									  dflags.setColor(
+											  packData.getCircleColor(v));
+								  cpd.drawCircle(ctr,rad,dflags);
+								  count++;
+							  }
+						  }
+					  }
 				  }
 			  }
+		  } finally {
+			  util.BusyCursor.pop();
 		  }
 		  // record so zoom/pan ('disp -wr') redraws the tiling
-		  cpd.recordDrawCmd("tile_torus "+tm+" "+tn,true);
+		  StringBuilder rec=new StringBuilder("tile_torus "+tm+" "+tn);
+		  for (int fi=0;fi<objFlags.size();fi++)
+			  rec.append(" -"+objFlags.get(fi));
+		  cpd.recordDrawCmd(rec.toString(),true);
 		  PackControl.canvasRedrawer.paintMyCanvasses(packData,false);
 		  CirclePack.cpb.msg("tile_torus: "+((2*tm+1)*(2*tn+1))+" copies, "+
-				  count+" circles total;  periods "+t1+" and "+t2+
+				  count+" objects total;  periods "+t1+" and "+t2+
 				  " (tau = t2 when normalized)");
 		  return count;
 	  }
@@ -6613,13 +6665,20 @@ public class CommandStrParser {
 						  packData.cpDrawing.redrawHistory.clear();
 						  packData.cpDrawing.clearCanvas(false);
 						  int cnt=0;
-						  Iterator<String> rit=replay.iterator();
-						  while (rit.hasNext()) {
-							  try {
-								  cnt+=jexecute(packData,rit.next());
-							  } catch (Exception ex) {
-								  // stale entry (e.g. vertex gone); skip
+						  // replay can be slow (e.g. a large 'tile_torus')
+						  // and runs on the event thread for zoom/pan
+						  util.BusyCursor.push();
+						  try {
+							  Iterator<String> rit=replay.iterator();
+							  while (rit.hasNext()) {
+								  try {
+									  cnt+=jexecute(packData,rit.next());
+								  } catch (Exception ex) {
+									  // stale entry (e.g. vertex gone); skip
+								  }
 							  }
+						  } finally {
+							  util.BusyCursor.pop();
 						  }
 						  PackControl.canvasRedrawer.
 						  	paintMyCanvasses(packData,dispLite);

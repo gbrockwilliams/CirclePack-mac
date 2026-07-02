@@ -63,25 +63,33 @@ actual lattice period — and its modular-group representative in the
 fundamental region (what `torus_t` reports). Sets alpha to the
 corner vertex.
 
-### `tile_torus [m [n]]`
+### `tile_torus [m [n]] [-flags]`
 
 Displays a euclidean torus as a doubly periodic tiling: clears the
 canvas and draws a (2m+1)×(2n+1) lattice of copies of the fundamental
 domain, every circle shifted by integer combinations of the two
 period vectors. Defaults m=n=2; `tile_torus m` uses m both ways.
 
+Optional flags in the usual `disp` style choose what is drawn, in
+the order given: `-c` circles, `-cf` filled circles, `-f` faces,
+`-ff` filled faces. Options follow as in `disp` (color codes,
+`t3` thickness); objects use their stored colors when no color is
+given. E.g. `tile_torus 2 -cf` or `tile_torus 3 -ff -c`.
+
 - Run `normalize_torus` first for the standard 0/1/1+τ/τ corners.
 - Only **flat** tori can be tiled by translation; affine tori (where
   the fundamental domain is not a parallelogram) are rejected.
-- The tiling is recorded for redraw, so **zooming and panning
-  preserve it** (see [Redraw behavior](#redraw-behavior)).
+- The tiling (including flags) is recorded for redraw, so **zooming
+  and panning preserve it** (see [Redraw behavior](#redraw-behavior)).
+- Large tilings take a while to draw; the cursor switches to the
+  system busy cursor while CirclePack is working.
 
 Typical sequence:
 
 ```
 create brooks_torus 3 3 2 1
 normalize_torus
-tile_torus 2
+tile_torus 2 -ff -c
 ```
 
 ---

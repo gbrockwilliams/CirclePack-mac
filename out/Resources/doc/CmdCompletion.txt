@@ -227,7 +227,7 @@ svg [-c{} {v..}] -f {filename.html}
 swap [-cma] {v w} 
 test_repack [options] 
 torpack [A B] 
-tile_torus [m [n]] 
+tile_torus [m [n]] [-{fct}..] 
 torus_t 
 timer -[sx] 
 transition {filename} 

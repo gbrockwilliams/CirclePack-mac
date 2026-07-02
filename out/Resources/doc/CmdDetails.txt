@@ -4851,14 +4851,20 @@ of circles with that particular edge displayed.</instance>
 </description>
 </command>
 
-<command cmd="tile_torus" flags="[m [n]]">
+<command cmd="tile_torus" flags="[m [n]] [-{fct}..]">
 <description>
 	Display a euclidean torus as a doubly-periodic tiling of the
 	plane: the canvas is cleared and a (2m+1)x(2n+1) lattice of
 	copies of the fundamental domain is drawn, each circle
 	shifted by integer combinations of the two lattice period
 	vectors. Defaults are m=n=2; "tile_torus m" uses m in both
-	directions. Side-pairings are set up automatically if
+	directions. Optional flags in the usual 'disp' style choose
+	what is drawn, in the order given: '-c' circles, '-cf'
+	filled circles, '-f' faces, '-ff' filled faces; options
+	follow as in 'disp' (color codes, 't{t}' thickness) and
+	objects use their stored colors when no color is given —
+	e.g. "tile_torus 2 -cf", "tile_torus 3 -ff -c".
+	Side-pairings are set up automatically if
 	missing. Run 'normalize_torus' first to get the standard
 	0, 1, 1+tau, tau corners. Only flat tori can be tiled by
 	translation; affine tori are rejected. The tiling is recorded
@@ -4868,6 +4874,8 @@ of circles with that particular edge displayed.</instance>
 <instance text="create brooks_torus 3 3 2 1;normalize_torus;tile_torus 2">
 	build a Brooks torus, normalize it, and show 25 lattice
 	copies</instance>
+<instance text="tile_torus 2 -ff -c">
+	the same tiling with filled faces and circle outlines</instance>
 </examples>
 <seealso>
 <see>normalize_torus</see>
