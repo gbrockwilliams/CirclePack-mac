@@ -127,6 +127,33 @@ involved.
 The non-interactive equivalent is Ken's `adjoin p q v w n` command,
 which now also saves an `undo` snapshot.
 
+### Map-driven welding (`extender cw`)
+
+Brock's conformal-welding machinery (revived from the original C
+code) lives in the `CONFORMAL_WELDING` pack extender. Attach with
+`extender cw`, then:
+
+- `|cw| weld -q{p} v w -f {mapfile} -a` — weld the attached packing
+  onto pack p, matching the boundaries through a welding map
+  h: [0,1] → [0,1] read from the file (`-a` performs the adjoin).
+- `|cw| findWM -q{q} v w n` / `|cw| writeHomeo {file}` — the inverse
+  problem: recover the welding homeomorphism from two max packings.
+- `|cw| unweld {e..}` — cut a packing apart along an edge path.
+- `|cw| randC {N}` — build a random packing: ~N² random points in a
+  random N-gon inscribed in the circle, Delaunay-triangulated
+  (Shewchuk's `triangle`, bundled for macOS) and max-packed.
+
+### `weldmap` — welding-map editor
+
+Opens a square-canvas editor for building the welding map, like a
+game-controller response curve. Left-click adds a control point,
+dragging moves one (coordinates are clamped between its neighbors',
+so the map always stays 1-to-1), right-click deletes; endpoints are
+fixed at (0,0) and (1,1). A formula in x can be entered instead
+(e.g. `x+0.1*sin(2*Pi*x)`) — it is sampled, normalized to h(0)=0,
+h(1)=1, and checked for strict monotonicity. **Save…** writes the
+`PATH x y ... END` file that `|cw| weld -f` reads.
+
 ---
 
 ## Undo

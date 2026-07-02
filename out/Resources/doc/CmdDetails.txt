@@ -5103,6 +5103,26 @@ does 'repack', then reports the elapsed time.
 </options>
 </command>
 
+<command cmd="weldmap">
+<description>
+	Open the welding-map editor: a square canvas for building a
+	piecewise-linear increasing homeomorphism h of [0,1] onto
+	itself, drawn like a response curve. Left-click to add a
+	control point, drag to move one (coordinates are clamped
+	between the neighboring points', so the map always remains
+	1-to-1), right-click to delete; the endpoints (0,0) and (1,1)
+	are fixed. Alternatively, type a formula in x (for example
+	"x+0.1*sin(2*Pi*x)"); it is sampled and normalized so that
+	h(0)=0 and h(1)=1, and must be strictly monotone. Save writes
+	the map in the PATH format read by the conformal welding
+	extender ('|cw| weld .. -f {file}').
+</description>
+<seealso>
+<see>weld</see>
+<see>weld_map</see>
+</seealso>
+</command>
+
 
 <command cmd="write" flags="-[AcdegirRzZavloftmMy] {filename}">
 <description>

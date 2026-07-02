@@ -241,6 +241,7 @@ vert_order
 vlist [options] 
 weld {p} {q} {v} {w} [options] 
 weld_map {p} {q} {v} {w} {filename} [-gm] 
+weldmap 
 write -[AcdegirRzZavloftmMy] {filename} 
 Write -[AcgirzavloftTmMy] {filename} 
 write_custom -[option] -[fa] {file} 

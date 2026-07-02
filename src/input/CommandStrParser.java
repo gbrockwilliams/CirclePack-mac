@@ -5092,6 +5092,20 @@ public class CommandStrParser {
   case 'w': // fall through
   case 'W':
   {
+	  // ========= weldmap ========
+	  // Open the welding-map editor: draw/edit a piecewise-linear
+	  // homeomorphism h:[0,1]->[0,1] (or enter a formula) and save
+	  // it in the PATH format read by '|cw| weld -f {file}'.
+	  if (cmd.startsWith("weldmap")) {
+		  try {
+			  frames.WeldMapFrame.openEditor();
+		  } catch (Exception ex) {
+			  throw new ParserException("weldmap: could not open "+
+					  "editor: "+ex.getMessage());
+		  }
+		  return 1;
+	  }
+
 	  // ========= write_custom ======
 
 	  if (cmd.startsWith("write_cus") || cmd.startsWith("Write_cus")) {
