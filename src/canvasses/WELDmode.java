@@ -16,6 +16,7 @@ import images.CPIcon;
 import input.TrafficCenter;
 import listManip.NodeLink;
 import packing.PackData;
+import packing.PackUndo;
 import packing.WeldUtil;
 import util.SphView;
 
@@ -231,6 +232,16 @@ public class WELDmode extends MyCanvasMode {
 			int n1=arc1.size()-1;
 			int n2=arc2.size()-1;
 
+			// snapshot for 'undo'; copies, since refinement below
+			// mutates the packings in place
+			if (p1!=p2)
+				PackUndo.save("weld",new int[] {pack1,pack2},
+						new PackData[] {p1.copyPackTo(),p2.copyPackTo()},
+						null);
+			else
+				PackUndo.save("weld",new int[] {pack1},
+						new PackData[] {p1.copyPackTo()},null);
+
 			if (n1!=n2) {
 				int ans=JOptionPane.showConfirmDialog(
 						PackControl.activeFrame,
@@ -241,6 +252,7 @@ public class WELDmode extends MyCanvasMode {
 						"Weld: arcs differ",
 						JOptionPane.YES_NO_OPTION);
 				if (ans!=JOptionPane.YES_OPTION) {
+					PackUndo.clear(); // nothing changed
 					cancel(aW,"cancelled");
 					aW.setDefaultMode();
 					return;
@@ -265,7 +277,8 @@ public class WELDmode extends MyCanvasMode {
 			TrafficCenter.cmdGUI(pdata,"repack;layout;disp -w -c");
 			CirclePack.cpb.msg("weld: done; result is in p"+pack1+
 					" ("+pdata.nodeCount+" vertices); seam vertices "+
-					"are in vlist (e.g. 'disp -cc"+HILITE_1+"t3 vlist')");
+					"are in vlist (e.g. 'disp -cc"+HILITE_1+"t3 vlist'); "+
+					"'undo' reverts");
 		} catch (Exception ex) {
 			CirclePack.cpb.errMsg("weld failed: "+ex.getMessage());
 		}

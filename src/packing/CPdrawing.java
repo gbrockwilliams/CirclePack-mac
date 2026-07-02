@@ -19,6 +19,7 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.JPanel;
@@ -97,6 +98,10 @@ public class CPdrawing extends JPanel implements MouseListener {
 	
 	// instance variables
 	public DispOptions dispOptions;
+	// Drawing commands since the last canvas wipe; 'disp -wr' replays
+	// these so zoom/pan reproduces faces, fills, tile_torus, etc.
+	public ArrayList<String> redrawHistory=new ArrayList<String>();
+	public static final int REDRAW_HISTORY_MAX=512;
 	public PostOptions postOptions;
 	public DataFormater dataFormater; // for 'output' operation
 	public double XMin;
@@ -208,6 +213,7 @@ public class CPdrawing extends JPanel implements MouseListener {
 		textSize=CPBase.DEFAULT_INDEX_FONT.getSize();
 		setLineThickness(CPBase.DEFAULT_LINETHICKNESS);
 		dispOptions.reset();
+		redrawHistory.clear();
 		fillColor=CPBase.defaultFillColor;
 		imageContextReal.setColor(CPBase.defaultCircleColor);
 		
@@ -390,6 +396,22 @@ public class CPdrawing extends JPanel implements MouseListener {
 		if (drawingPD.packNum==CirclePack.cpb.getActivePackNum())
 			  PackControl.activeFrame.reDisplay();
 		else repaint();
+	}
+
+	/**
+	 * Record a drawing command for replay by 'disp -wr' (so zoom and
+	 * pan reproduce whatever was on the screen). A command that wipes
+	 * the canvas starts a fresh history. History is capped; once full,
+	 * further commands are dropped (replay shows the first
+	 * REDRAW_HISTORY_MAX operations).
+	 * @param cmdstr String complete command, e.g. "disp -w -cf a"
+	 * @param wipe boolean true if the command clears the canvas first
+	 */
+	public void recordDrawCmd(String cmdstr,boolean wipe) {
+		if (wipe)
+			redrawHistory.clear();
+		if (redrawHistory.size()<REDRAW_HISTORY_MAX)
+			redrawHistory.add(cmdstr);
 	}
 
 	/**

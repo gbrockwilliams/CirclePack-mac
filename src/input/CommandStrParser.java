@@ -107,6 +107,7 @@ import packing.PackCreation;
 import packing.PackData;
 import packing.PackExtender;
 import packing.PackMethods;
+import packing.PackUndo;
 import packing.QualMeasures;
 import packing.ReadWrite;
 import packing.TorusData;
@@ -797,9 +798,15 @@ public class CommandStrParser {
 	    	  else // n is given
 	    		  N=Integer.parseInt((String)items.get(4));
 	    	  
+	    	  // snapshot for 'undo': slot pnum1's packing is replaced,
+	    	  // not mutated ('adjoinCall' clones its inputs)
+	    	  PackUndo.save("adjoin",new int[] {pnum1},
+	    			  new PackData[] {packData},null);
+
 	    	  // call to adjoin
 	    	  PackData newPack=PackData.adjoinCall(packData, qackData, v1, v2, N);
 	    	  if (newPack==null) {
+	    		  PackUndo.clear(); // nothing changed
     			  CirclePack.cpb.errMsg("'adjoin' failed: ");
     			  return 0;
 	    	  }
@@ -4961,12 +4968,17 @@ public class CommandStrParser {
 	  if (cmd.startsWith("tile_torus")) {
 		  if (!TorusData.isTopTorus(packData))
 			  throw new DataException("tile_torus: packing is not a torus");
+		  if (packData.hes!=0)
+			  throw new DataException("tile_torus: packing must be "+
+					  "euclidean (try 'geom_to_e' and 'repack;layout')");
 		  int tm=2,tn=2;
 		  if (flagSegs.size()>0) {
 			  items=flagSegs.get(0);
 			  try { tm=Integer.parseInt(items.get(0)); } catch (Exception ex) {}
 			  try { tn=Integer.parseInt(items.get(1)); } catch (Exception ex) { tn=tm; }
 		  }
+		  if (tm<0) tm=-tm;
+		  if (tn<0) tn=-tn;
 		  // ensure side-pairings are set up
 		  if (packData.packDCEL.pairLink==null ||
 				  packData.packDCEL.pairLink.size()<5) {
@@ -4981,6 +4993,16 @@ public class CommandStrParser {
 		  Complex c0=corners.get(1);           // corner at origin (after normalize)
 		  Complex t1=corners.get(2).minus(c0); // horizontal period
 		  Complex t2=corners.get(4).minus(c0); // vertical period (tau)
+
+		  // translation copies only make sense if the fundamental
+		  // domain is a parallelogram; an affine torus (multiplicative
+		  // periods) fails this check
+		  Complex gap=corners.get(3).minus(c0.add(t1).add(t2));
+		  double pscale=t1.abs()+t2.abs();
+		  if (pscale<=0.0 || gap.abs()>0.001*pscale)
+			  throw new DataException("tile_torus: fundamental domain "+
+					  "is not a parallelogram (affine torus?); only "+
+					  "flat tori can be tiled by translation");
 
 		  CPdrawing cpd=packData.cpDrawing;
 		  cpd.clearCanvas(false);
@@ -4997,9 +5019,12 @@ public class CommandStrParser {
 				  }
 			  }
 		  }
+		  // record so zoom/pan ('disp -wr') redraws the tiling
+		  cpd.recordDrawCmd("tile_torus "+tm+" "+tn,true);
 		  PackControl.canvasRedrawer.paintMyCanvasses(packData,false);
 		  CirclePack.cpb.msg("tile_torus: "+((2*tm+1)*(2*tn+1))+" copies, "+
-				  count+" circles total;  tau = "+c0.plus(t2));
+				  count+" circles total;  periods "+t1+" and "+t2+
+				  " (tau = t2 when normalized)");
 		  return count;
 	  }
 
@@ -6550,6 +6575,12 @@ public class CommandStrParser {
 	    		  setText=StringUtil.reconstitute(flagSegs);
 	    	  boolean dispLite=false; // disp only the active canvas?
 	    	  if (cmd.charAt(1)=='I') dispLite=true; // yes, only active
+	    	  // capture flags now (flagSegs is consumed below) so the
+	    	  // command can be recorded for 'disp -wr' replay
+	    	  String origFlags=null;
+	    	  if (flagSegs!=null && flagSegs.size()>0)
+	    		  origFlags=StringUtil.reconstitute(flagSegs);
+	    	  boolean wiped=false; // did this command clear the canvas?
 			  
 			  // No flag strings? Use dispOptions, else no action 
 			  // (DisplayPanel (checkboxes or tailored string))
@@ -6570,16 +6601,42 @@ public class CommandStrParser {
 			  // -w should be first; -wr redraws and exits
 			  String fs=first_seg.get(0).toString().trim();
 			  if (fs.startsWith("-w")) {
-				  packData.cpDrawing.clearCanvas(false);
 				  if (fs.startsWith("-wr")) {
+					  // replay the recorded drawing history, if any, so
+					  // zoom/pan reproduce exactly what was on screen
+					  // (faces, filled circles, tile_torus, etc.)
+					  if (packData.cpDrawing.redrawHistory.size()>0) {
+						  ArrayList<String> replay=new ArrayList<String>(
+								  packData.cpDrawing.redrawHistory);
+						  // replayed commands re-record themselves, so
+						  // start fresh to avoid duplicate entries
+						  packData.cpDrawing.redrawHistory.clear();
+						  packData.cpDrawing.clearCanvas(false);
+						  int cnt=0;
+						  Iterator<String> rit=replay.iterator();
+						  while (rit.hasNext()) {
+							  try {
+								  cnt+=jexecute(packData,rit.next());
+							  } catch (Exception ex) {
+								  // stale entry (e.g. vertex gone); skip
+							  }
+						  }
+						  PackControl.canvasRedrawer.
+						  	paintMyCanvasses(packData,dispLite);
+						  return cnt+1;
+					  }
+					  // no history: fall back to stored display options
+					  packData.cpDrawing.clearCanvas(false);
 					  String tmpstr=packData.cpDrawing.dispOptions.toString().trim();
 					  if (tmpstr.equals("-w"))
 						  return jexecute(packData,cmd+" ");
 					  // remove redundant -w (or -wr)
 					  if (tmpstr.startsWith("-w"))
-						  tmpstr=tmpstr.substring(3); 
+						  tmpstr=tmpstr.substring(3);
 					  return jexecute(packData,cmd+" "+tmpstr);
 				  }
+				  packData.cpDrawing.clearCanvas(false);
+				  wiped=true;
 				  count++;
 				  flagSegs.remove(0);
 				  fs=null;
@@ -6613,9 +6670,14 @@ public class CommandStrParser {
 				  
 			  // send for parsing/execution
 			  count +=DisplayParser.dispParse(packData,flagSegs);
-			  if (count>0) 
+			  if (count>0) {
+				  // record for 'disp -wr' replay (zoom/pan redraw)
+				  if (origFlags!=null)
+					  packData.cpDrawing.recordDrawCmd(
+							  "disp "+origFlags,wiped);
 				  PackControl.canvasRedrawer.
 				  	paintMyCanvasses(packData,dispLite);
+			  }
 			  if (setText!=null && !dispLite) // record as display text?
 				  jexecute(packData,new String("set_disp_flags "+setText));
 			  return count;
@@ -10843,6 +10905,22 @@ public class CommandStrParser {
       } // end of 's'
       case 'u':
       {
+	      // ========= undo =========
+	      // Restore the packing(s) saved before the last destructive
+	      // operation (weld, brooks set_param, adjoin). One level only.
+	      if (cmd.startsWith("undo")) {
+	    	  if (!PackUndo.pending()) {
+	    		  CirclePack.cpb.msg("undo: nothing to undo");
+	    		  return 1;
+	    	  }
+	    	  String opname=PackUndo.getOpName();
+	    	  int rcnt=PackUndo.restore();
+	    	  if (rcnt>0)
+	    		  CirclePack.cpb.msg("undo: reverted '"+opname+"' ("+
+	    				  rcnt+" packing(s) restored)");
+	    	  return rcnt;
+	      }
+
 	      // ========= unflip ========
 	      if (cmd.startsWith("unflip")) {
 	    	  items=flagSegs.elementAt(0); // should be only one segment

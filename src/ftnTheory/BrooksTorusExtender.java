@@ -5,6 +5,7 @@ import java.util.Vector;
 import allMains.CirclePack;
 import packing.PackData;
 import packing.PackExtender;
+import packing.PackUndo;
 import util.CmdStruct;
 
 /**
@@ -114,6 +115,20 @@ public class BrooksTorusExtender extends PackExtender {
 		}
 		newPack.status=true;
 		int pnum=extenderPD.packNum;
+		// snapshot for 'undo': the old packing object is replaced
+		// (not mutated), so a reference suffices; the hook restores
+		// this extender's fields, which the rebuild overwrites
+		final int oldCell=cell;
+		final int[] oldParam=hold;
+		final int[] oldCellOf=cellOf;
+		PackUndo.save("brooks set_param",new int[] {pnum},
+				new PackData[] {extenderPD},new Runnable() {
+			public void run() {
+				cellCfrac[oldCell]=oldParam;
+				cellOf=oldCellOf;
+				pdc=extenderPD.packDCEL;
+			}
+		});
 		// keepX=true moves this extender onto the new packing and
 		// repoints 'extenderPD'
 		PackData pdata=CirclePack.cpb.swapPackData(newPack,pnum,true);
