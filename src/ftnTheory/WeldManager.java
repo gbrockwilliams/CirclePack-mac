@@ -145,6 +145,15 @@ public class WeldManager extends PackExtender {
 		extensionAbbrev="CW";
 		toolTip="'WeldManager': handling 'conformal welding' operations";
 		weldListFileName=new String("weldList_"+CPBase.debugID+".w");
+		if (p==null || !p.status || p.nodeCount<3) {
+			// no packing to attach to; don't start
+			try {
+				CirclePack.cpb.errMsg("extender cw: pack is empty; "+
+						"load or create a packing first");
+			} catch (Exception ex) {}
+			running=false;
+			return;
+		}
 		try {
 			registerXType();
 		} catch (Throwable t) {
