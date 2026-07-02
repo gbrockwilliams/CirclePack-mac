@@ -194,9 +194,21 @@ public class WeldMapFrame extends JFrame {
 		refresh();
 	}
 
+	/**
+	 * Default to 'PackingDirectory': that is where '|cw| weld -f'
+	 * resolves bare filenames, so saved maps are found by default.
+	 */
+	File defaultDir() {
+		if (lastDir!=null)
+			return lastDir;
+		if (CPFileManager.PackingDirectory!=null &&
+				CPFileManager.PackingDirectory.exists())
+			return CPFileManager.PackingDirectory;
+		return CPFileManager.CurrentDirectory;
+	}
+
 	void saveFile() {
-		JFileChooser jfc=new JFileChooser(
-				(lastDir!=null)?lastDir:CPFileManager.CurrentDirectory);
+		JFileChooser jfc=new JFileChooser(defaultDir());
 		jfc.setDialogTitle("Save welding map (PATH format)");
 		if (jfc.showSaveDialog(this)!=JFileChooser.APPROVE_OPTION)
 			return;
@@ -211,8 +223,15 @@ public class WeldMapFrame extends JFrame {
 			}
 			bw.write("END\n");
 			bw.close();
+			String hint="";
+			if (f.getParentFile()!=null && f.getParentFile().equals(
+					CPFileManager.PackingDirectory))
+				hint="; use e.g. '|cw| weld -q1 v w -f "+f.getName()+" -a'";
+			else
+				hint="; NOTE: '|cw| weld -f' looks for bare filenames "+
+						"in "+CPFileManager.PackingDirectory;
 			CirclePack.cpb.msg("weldmap: saved "+pts.size()+
-					" points to "+f.getAbsolutePath());
+					" points to "+f.getAbsolutePath()+hint);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this,
 					"Save failed: "+ex.getMessage(),
@@ -221,8 +240,7 @@ public class WeldMapFrame extends JFrame {
 	}
 
 	void loadFile() {
-		JFileChooser jfc=new JFileChooser(
-				(lastDir!=null)?lastDir:CPFileManager.CurrentDirectory);
+		JFileChooser jfc=new JFileChooser(defaultDir());
 		jfc.setDialogTitle("Load welding map (PATH format)");
 		if (jfc.showOpenDialog(this)!=JFileChooser.APPROVE_OPTION)
 			return;

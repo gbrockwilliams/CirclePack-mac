@@ -515,7 +515,14 @@ public class WeldManager extends PackExtender {
 
 		// read the weld map of x-y coords.
 		Path2D.Double path_list = PathManager.readpath(weldmapfile,script_flag);
-		if (path_list == null) { // default to identity: [0,1] to [0,1]
+		if (path_list == null) {
+			// a file was named but couldn't be read: error out rather
+			// than silently welding with the identity map
+			if (weldmapfile!=null && weldmapfile.trim().length()>=2)
+				Oops("weld: could not read weldmap file '"+weldmapfile+
+						"' (bare filenames are looked up in "+
+						CPFileManager.PackingDirectory+")");
+			// no file given: identity map [0,1] to [0,1]
 			path_list = new Path2D.Double();
 			path_list.moveTo(0.0, 0.0);
 			path_list.lineTo(0.5, 0.5);
