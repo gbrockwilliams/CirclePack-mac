@@ -490,7 +490,10 @@ public class RandomTriangulation {
 		for (int i=1;i<poly.length;i++) {
 			Complex z=poly[i];
 			Z_list.add(z);
-			elink.add(new EdgeSimple(tickv,tickv++));
+			// pre-increment: edge (tickv,tickv+1). (Post-increment
+			// here made self-loop segments (v,v), so 'triangle'
+			// found no valid region and returned 0 triangles.)
+			elink.add(new EdgeSimple(tickv,++tickv));
 		}
 		// have to close up
 		elink.add(new EdgeSimple(tickv,iCount+1));
