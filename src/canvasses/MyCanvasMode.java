@@ -41,6 +41,9 @@ public class MyCanvasMode extends MyTool {
 	public Cursor modeCursor; // canvas active cursor
 	public CPIcon cursorIcon;
 	public boolean handy; // if true, mouse drag translations is on
+	public boolean packSwitchOK; // if true, mode (and its state)
+		// survives switching the active packing (e.g. WELDmode,
+		// whose two-pack flow requires a switch mid-selection)
 
 	// there may be a command associated with each mouse button
 	public String cmd2,cmd3; //

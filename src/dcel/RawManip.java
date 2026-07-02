@@ -194,8 +194,10 @@ public class RawManip {
 	 */
 	public static HalfEdge splitEdge_raw(PackDCEL pdcel,HalfEdge edge) {
 		
-		// make room
-		if (pdcel.vertCount+1>=pdcel.sizeLimit)
+		// make room ('vertices.length' check in case 'sizeLimit'
+		// is out of step with a tightly allocated array)
+		if (pdcel.vertCount+1>=pdcel.sizeLimit ||
+				pdcel.vertCount+1>=pdcel.vertices.length)
 			pdcel.alloc_vert_space(pdcel.vertCount+11,true);
 	
 		// If bdry, ensure it is cclw edge, set 'twinIdeal'
@@ -356,8 +358,10 @@ public class RawManip {
 		if (uedge.isBdry())
 			throw new ParserException("Given 'uedge' should be interior");
 
-		// make room
-		if (pdcel.vertCount+1>=pdcel.sizeLimit)
+		// make room ('vertices.length' check in case 'sizeLimit'
+		// is out of step with a tightly allocated array)
+		if (pdcel.vertCount+1>=pdcel.sizeLimit ||
+				pdcel.vertCount+1>=pdcel.vertices.length)
 			pdcel.alloc_vert_space(pdcel.vertCount+11,true);
 
 		Vertex V=uedge.origin;
@@ -1004,9 +1008,10 @@ public class RawManip {
 			  ideal=true;
 		  }
 		  
-		  // make room
-		  int node=pdcel.vertCount+1; // new index 
-		  if (node>=pdcel.sizeLimit)
+		  // make room ('vertices.length' check in case 'sizeLimit'
+		  // is out of step with a tightly allocated array)
+		  int node=pdcel.vertCount+1; // new index
+		  if (node>=pdcel.sizeLimit || node>=pdcel.vertices.length)
 			  pdcel.alloc_vert_space(node+10,true);
 		  
 		  HalfLink hlink=HalfLink.nextLink(pdcel,edge);

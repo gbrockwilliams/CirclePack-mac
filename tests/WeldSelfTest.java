@@ -32,6 +32,7 @@ public class WeldSelfTest {
 		scenario14_twoPackHyp();
 		scenario15_twoPackHypRefine();
 		scenario16_undoSnapshotIndependence();
+		scenario17_weldOntoCopy();
 		System.out.println("\n==== failures: "+failures+" ====");
 	}
 
@@ -395,6 +396,21 @@ public class WeldSelfTest {
 					ex.getClass().getSimpleName()+": "+ex.getMessage());
 			failures++;
 		}
+	}
+
+	// Brock's 2026-07-01 GUI crash: weld a packing to a COPY of
+	// itself with refinement. 'copyPackTo' (via 'cloneDCEL') used to
+	// leave 'sizeLimit' at 1000 while allocating 'vertices' tightly,
+	// so the first 'splitEdge_raw' on the copy ran off the array
+	// ("Index 170 out of bounds for length 170").
+	static void scenario17_weldOntoCopy() {
+		PackData p1=PackCreation.hexBuild(6); // 127 verts
+		PackData p2=p1.copyPackTo();
+		int b1=firstBdry(p1);
+		int b2=firstBdry(p2);
+		// mismatched arcs so the COPY gets refined (split) too
+		tryWeld2(p1,b1,clwFrom(p1,b1,9),p2,b2,cclwFrom(p2,b2,13),
+				false,"weld onto copyPackTo copy, refine 9 vs 13");
 	}
 
 	static int firstBdry(PackData p) {

@@ -3327,6 +3327,9 @@ public class CombDCEL {
     	
     	// new vertices
        	pdcel.vertices=new Vertex[pdc.vertCount+1];
+       	// keep 'sizeLimit' consistent with the tight allocation, else
+       	// 'splitEdge_raw's make-room check passes but the array is full
+       	pdcel.sizeLimit=pdc.vertCount;
     	for (int v=1;v<=pdc.vertCount;v++) {
     		pdcel.vertices[v]=pdc.vertices[v].clone();
     		pdcel.vertices[v].vertIndx=v;

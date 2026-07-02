@@ -941,7 +941,11 @@ MouseMotionListener,FocusListener {
 		screenCtrlFrame.setTitle("CirclePack Screen Options, p"+packnum);
 		outputFrame.outPanel.update(old_pack);
 		activeFrame.setCPDrawing(CPBase.cpDrawing[packnum]);
-		activeFrame.activeScreen.setDefaultMode();
+		// modes with 'packSwitchOK' (e.g. weld, which selects arcs
+		// on two packings) keep running across the switch
+		if (activeFrame.activeScreen.activeMode==null ||
+				!activeFrame.activeScreen.activeMode.packSwitchOK)
+			activeFrame.activeScreen.setDefaultMode();
 		activeFrame.updateTitle();
 		activeFrame.activeScreen.repaint();
 		screenCtrlFrame.screenPanel.setSliders();

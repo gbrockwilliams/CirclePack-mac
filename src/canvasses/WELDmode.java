@@ -61,6 +61,7 @@ public class WELDmode extends MyCanvasMode {
 				"packing, then on another (same circle twice = full bdry); "+
 				"right-click cancels",
 				tool_type,true);
+		packSwitchOK=true; // welding two packings needs a mid-mode switch
 		clearState();
 		updateMenuItem();
 	}
@@ -280,7 +281,12 @@ public class WELDmode extends MyCanvasMode {
 					"are in vlist (e.g. 'disp -cc"+HILITE_1+"t3 vlist'); "+
 					"'undo' reverts");
 		} catch (Exception ex) {
-			CirclePack.cpb.errMsg("weld failed: "+ex.getMessage());
+			ex.printStackTrace(); // full trace to the launch terminal
+			StackTraceElement[] st=ex.getStackTrace();
+			String where=(st!=null && st.length>0)?
+					(" ["+st[0].getClassName()+"."+st[0].getMethodName()+
+					":"+st[0].getLineNumber()+"]"):"";
+			CirclePack.cpb.errMsg("weld failed: "+ex.getMessage()+where);
 		}
 		clearState();
 		rePaint(aW);
