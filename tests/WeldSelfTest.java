@@ -26,6 +26,12 @@ public class WeldSelfTest {
 		scenario8_hypCommonStart();
 		scenario9_hypRefine();
 		scenario10_hypFoldShut();
+		scenario11_twoPackEucl();
+		scenario12_twoPackEuclRefine();
+		scenario13_twoPackSphere();
+		scenario14_twoPackHyp();
+		scenario15_twoPackHypRefine();
+		scenario16_undoSnapshotIndependence();
 		System.out.println("\n==== failures: "+failures+" ====");
 	}
 
@@ -217,6 +223,178 @@ public class WeldSelfTest {
 		int half=total/2;
 		int w=clwFrom(p,b,half);
 		tryWeld(p,b,w,b,w,"HYP fold shut");
+	}
+
+	/**
+	 * mimic WELDmode.doWeld for TWO packings (p1!=p2): refine if the
+	 * edge counts differ, adjoin, verify. 'expectClosed' true when
+	 * the result should have no boundary (skip repack: repacking a
+	 * closed surface headless hits the known CirclePack.cpb NPE).
+	 */
+	static void tryWeld2(PackData p1,int v1,int w1,PackData p2,
+			int v2,int w2,boolean expectClosed,String label) {
+		System.out.println("\n--- "+label+": p1 v1="+v1+" w1="+w1+
+				" / p2 v2="+v2+" w2="+w2);
+		try {
+			ArrayList<Integer> arc1=WeldUtil.arcClw(p1,v1,w1);
+			ArrayList<Integer> arc2=WeldUtil.arcCclw(p2,v2,w2);
+			if (arc1==null||arc2==null) {
+				System.out.println("  arc walk failed");
+				failures++;
+				return;
+			}
+			int n1=arc1.size()-1;
+			int n2=arc2.size()-1;
+			System.out.println("  arcs ("+n1+"/"+n2+" edges): "+
+					arc1+"  /  "+arc2);
+			if (n1!=n2) {
+				n1=WeldUtil.refineToMatch(p1,v1,w1,p2,v2,w2);
+				System.out.println("  refined to "+n1+" edges: "+
+						WeldUtil.arcClw(p1,v1,w1)+"  /  "+
+						WeldUtil.arcCclw(p2,v2,w2));
+			}
+			PackData newPack=PackData.adjoinCall(p1,p2,v1,v2,n1);
+			if (newPack==null) {
+				System.out.println("  adjoinCall returned null");
+				failures++;
+				return;
+			}
+			newPack.packDCEL.fixDCEL(newPack);
+			// sanity: node count should be p1+p2 minus shared arc verts
+			int expect=p1.nodeCount+p2.nodeCount-(n1+1);
+			if (expectClosed) // full-bdry weld: ends identified too
+				expect=p1.nodeCount+p2.nodeCount-n1;
+			if (newPack.nodeCount!=expect)
+				System.out.println("  note: nodeCount "+newPack.nodeCount+
+						" (naive expectation "+expect+")");
+			int bdryCnt=0;
+			for (int v=1;v<=newPack.nodeCount;v++)
+				if (newPack.isBdry(v)) bdryCnt++;
+			if (expectClosed && bdryCnt!=0) {
+				System.out.println("  FAIL: expected closed surface, "+
+						bdryCnt+" bdry verts remain");
+				failures++;
+				return;
+			}
+			checkCurves(newPack,label);
+			if (expectClosed) {
+				System.out.println("  closed surface: repack skipped "+
+						"(headless cpb limitation)");
+				return;
+			}
+			int rp=CommandStrParser.jexecute(newPack,"repack");
+			int ly=CommandStrParser.jexecute(newPack,"layout");
+			System.out.println("  repack="+rp+" layout="+ly);
+			checkCurves(newPack,label+" after repack");
+		} catch (Exception ex) {
+			System.out.println("  EXCEPTION: "+ex.getClass().getSimpleName()
+					+": "+ex.getMessage());
+			failures++;
+		}
+	}
+
+	// two euclidean discs, equal 3-edge arcs
+	static void scenario11_twoPackEucl() {
+		PackData p1=PackCreation.hexBuild(3);
+		PackData p2=PackCreation.hexBuild(3);
+		int b1=firstBdry(p1);
+		int b2=firstBdry(p2);
+		tryWeld2(p1,b1,clwFrom(p1,b1,3),p2,b2,cclwFrom(p2,b2,3),
+				false,"two-pack eucl zip 3");
+	}
+
+	// two euclidean discs of different size, 3 vs 5 edges (refine)
+	static void scenario12_twoPackEuclRefine() {
+		PackData p1=PackCreation.hexBuild(3);
+		PackData p2=PackCreation.hexBuild(4);
+		int b1=firstBdry(p1);
+		int b2=firstBdry(p2);
+		tryWeld2(p1,b1,clwFrom(p1,b1,3),p2,b2,cclwFrom(p2,b2,5),
+				false,"two-pack eucl refine 3 vs 5");
+	}
+
+	// weld two discs along their FULL boundaries: sphere
+	static void scenario13_twoPackSphere() {
+		PackData p1=PackCreation.hexBuild(3);
+		PackData p2=PackCreation.hexBuild(3);
+		int b1=firstBdry(p1);
+		int b2=firstBdry(p2);
+		tryWeld2(p1,b1,b1,p2,b2,b2,true,"two-pack full bdry (sphere)");
+	}
+
+	// two hyperbolic discs, equal arcs
+	static void scenario14_twoPackHyp() {
+		PackData p1=hypDisc(3);
+		PackData p2=hypDisc(3);
+		int b1=firstBdry(p1);
+		int b2=firstBdry(p2);
+		tryWeld2(p1,b1,clwFrom(p1,b1,3),p2,b2,cclwFrom(p2,b2,3),
+				false,"two-pack HYP zip 3");
+	}
+
+	// two hyperbolic discs, mismatched arcs (refine)
+	static void scenario15_twoPackHypRefine() {
+		PackData p1=hypDisc(3);
+		PackData p2=hypDisc(4);
+		int b1=firstBdry(p1);
+		int b2=firstBdry(p2);
+		tryWeld2(p1,b1,clwFrom(p1,b1,3),p2,b2,cclwFrom(p2,b2,5),
+				false,"two-pack HYP refine 3 vs 5");
+	}
+
+	// the weld-undo snapshot relies on 'copyPackTo' copies being
+	// unaffected by the in-place boundary refinement: verify.
+	static void scenario16_undoSnapshotIndependence() {
+		System.out.println("\n--- undo snapshot independence");
+		try {
+			PackData p1=PackCreation.hexBuild(3);
+			PackData p2=PackCreation.hexBuild(4);
+			int b1=firstBdry(p1);
+			int b2=firstBdry(p2);
+			int w1=clwFrom(p1,b1,3);
+			int w2=cclwFrom(p2,b2,5);
+			PackData c1=p1.copyPackTo();
+			PackData c2=p2.copyPackTo();
+			int n1before=c1.nodeCount;
+			int n2before=c2.nodeCount;
+			int n=WeldUtil.refineToMatch(p1,b1,w1,p2,b2,w2);
+			if (n<=0) {
+				System.out.println("  FAIL: refineToMatch failed");
+				failures++;
+				return;
+			}
+			// originals should have grown; copies must be untouched
+			if (p1.nodeCount<=n1before && p2.nodeCount<=n2before) {
+				System.out.println("  FAIL: refinement added no vertices?");
+				failures++;
+				return;
+			}
+			if (c1.nodeCount!=n1before || c2.nodeCount!=n2before) {
+				System.out.println("  FAIL: snapshot copies were mutated "+
+						"by refinement");
+				failures++;
+				return;
+			}
+			// and the copies must still be weldable (what 'undo'
+			// hands back to the user)
+			ArrayList<Integer> a1=WeldUtil.arcClw(c1,b1,w1);
+			ArrayList<Integer> a2=WeldUtil.arcCclw(c2,b2,w2);
+			if (a1==null || a2==null || a1.size()!=4 || a2.size()!=6) {
+				System.out.println("  FAIL: copies' arcs wrong: "+a1+
+						" / "+a2);
+				failures++;
+				return;
+			}
+			checkCurves(c1,"snapshot copy 1");
+			checkCurves(c2,"snapshot copy 2");
+			System.out.println("  OK: refinement grew originals ("+
+					n1before+"->"+p1.nodeCount+", "+n2before+"->"+
+					p2.nodeCount+"); copies untouched");
+		} catch (Exception ex) {
+			System.out.println("  EXCEPTION: "+
+					ex.getClass().getSimpleName()+": "+ex.getMessage());
+			failures++;
+		}
 	}
 
 	static int firstBdry(PackData p) {
