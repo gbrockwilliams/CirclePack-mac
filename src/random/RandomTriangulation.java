@@ -28,6 +28,7 @@ import math.Point3D;
 import packing.PackData;
 import packing.TorusData;
 import util.PathUtil;
+import util.RandPaths;
 import util.StringUtil;
 import util.UtilPacket;
 
@@ -511,6 +512,66 @@ public class RandomTriangulation {
 		return dData.getTriangulation();
 	}
 	
+	/**
+	 * Create a random euclidean packing of the unit disc with N
+	 * vertices: 'bdryN' random points on the unit circle plus
+	 * N-bdryN Poisson-distributed points inside, Delaunay
+	 * triangulated. Boundary radii are set uniformly at random in
+	 * [1-jitter,1+jitter]*(2pi/bdryN) -- 2pi being the circumference
+	 * of D -- so a euclidean repack has a randomized boundary.
+	 * Calling routine is responsible for repack/layout.
+	 * @param N int; total vertex count, min 12
+	 * @param bdryN int; boundary vertex count; if <3, use
+	 *    round(pi*sqrt(N)) (matches hex-packing bdry/total ratio)
+	 * @param jitter double; bdry radius spread as a fraction of
+	 *    2pi/bdryN; outside [0,1), use default 0.25
+	 * @param sS boolean; if true, use fixed seed for the radii
+	 *    (interior points are not yet seedable, see 'randomPolyPts')
+	 * @return PackData or null on error
+	 */
+	public static PackData randomDiscPack(int N,int bdryN,
+			double jitter,boolean sS) {
+		if (jitter<0.0 || jitter>=1.0)
+			jitter=0.25;
+		if (N<12)
+			N=12;
+		if (bdryN<3)
+			bdryN=(int)Math.round(Math.PI*Math.sqrt((double)N));
+		int intN=N-bdryN;
+		if (intN<4)
+			intN=4;
+		Complex[] circPts=RandPaths.unitCirclePath(bdryN,true);
+		if (circPts==null) {
+			CirclePack.cpb.errMsg("randomDiscPack: failed to place "+
+					"random points on the unit circle");
+			return null;
+		}
+		Triangulation Tri=randomPolyPts(intN,sS,circPts);
+		if (Tri==null) {
+			CirclePack.cpb.errMsg("randomDiscPack: Delaunay "+
+					"triangulation failed");
+			return null;
+		}
+		PackData p=Triangulation.tri_to_Complex(Tri,0); // euclidean
+		if (p==null) {
+			CirclePack.cpb.errMsg("randomDiscPack: tri_to_Complex failed");
+			return null;
+		}
+		p.chooseAlpha();
+		p.chooseGamma();
+		p.set_aim_default();
+		p.set_rad_default();
+		Random rand=new Random();
+		if (sS)
+			rand.setSeed((long)1);
+		double base=2.0*Math.PI/(double)bdryN;
+		for (int v=1;v<=p.nodeCount;v++)
+			if (p.isBdry(v))
+				p.setRadius(v,base*(1.0-jitter+
+						2.0*jitter*rand.nextDouble()));
+		return p;
+	}
+
 	/**
 	 * Call for a random packing in the unit disc with N vertices; use
 	 * sqrt(N) random points on the regular sqrt(N)-gon with vertices

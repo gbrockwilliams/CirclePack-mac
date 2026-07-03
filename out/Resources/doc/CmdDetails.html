@@ -808,6 +808,18 @@ counts do.)
 	displaying the result, and 'undo' for reverting a
 	reparameterization.
 
+	The "random" construction builds a random euclidean packing of
+	the unit disc with N total vertices (default 200): bdryN random
+	points on the unit circle (default, roughly pi*sqrt(N); override
+	with an optional second integer) plus Poisson-distributed
+	interior points, Delaunay triangulated. Boundary radii are set
+	uniformly at random in [1-j,1+j]*(2pi/bdryN) -- 2pi being the
+	circumference of the disc, j the jitter set by flag '-j {pct}'
+	(a percentage from 0 up to but not including 100, default 25;
+	0 means equal radii) -- and the result is repacked and laid out. A convenient
+	stand-in for 'seed 6;add_gen 6 6' when a less regular test
+	packing is wanted; each call gives a fresh packing.
+
 	Additional types can be anticipated, potentially with further
 	required options.
 </blockquote>
@@ -853,6 +865,15 @@ counts do.)
 <tr><td width="35%"><font color="blue">create brooks_torus 3 3 2 1</font></td>
 <td width="63%"> 3x3 Brooks torus,
 	every cell with continued-fraction parameter '2 1'</td></tr>
+<tr><td width="35%"><font color="blue">create random 200</font></td>
+<td width="63%"> random disc packing with
+	200 vertices</td></tr>
+<tr><td width="35%"><font color="blue">create random 100 20</font></td>
+<td width="63%"> 100 vertices, exactly
+	20 of them on the boundary</td></tr>
+<tr><td width="35%"><font color="blue">create random 200 -j 50</font></td>
+<td width="63%"> boundary radii spread
+	over [0.5,1.5]*(2pi/bdryN)</td></tr>
 </table></blockquote>
 <font size="+1" color="blue"><strong><a name="debug">debug</a></strong></font>&nbsp;&nbsp; <font face="sans-serif">[dsrex]&nbsp;&nbsp; </font>
 <blockquote>

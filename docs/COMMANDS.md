@@ -94,6 +94,45 @@ tile_torus 2 -ff -c
 
 ---
 
+## Random packings
+
+### `create random [N [bdryN]] [-j {pct}]`
+
+Builds a random euclidean packing of the unit disc with `N` total
+vertices (default 200) and replaces the current pack with it:
+
+1. `bdryN` random points are placed on the unit circle (default
+   roughly `pi*sqrt(N)`, which matches the boundary/total proportion
+   of a hex packing; give a second integer to override).
+2. `N - bdryN` Poisson-distributed points are chosen inside the
+   disc, and the whole set is Delaunay-triangulated (Shewchuk's
+   `triangle`, the same machinery as `|cw| randC`).
+3. Each boundary radius is set uniformly at random in
+   `[1-j, 1+j] * (2*pi/bdryN)` — `2*pi` being the circumference of
+   the disc, `j` the jitter given by `-j {pct}` as a percentage
+   (default 25, so `[0.75, 1.25]`; must be below 100; `-j 0` gives
+   equal boundary radii) — then the pack is repacked and laid out.
+   Since euclidean repacking is scale-invariant, only the spread
+   matters, not the mean.
+
+A quick source of irregular test packings — a random-combinatorics
+alternative to `seed 6;add_gen 6 6`. Every call gives a fresh
+packing.
+
+```
+create random 200
+create random 100 20       # exactly 20 boundary vertices
+create random 200 -j 50    # wilder boundary: radii in [0.5,1.5]*base
+create random 200 -j 0     # equal boundary radii
+```
+
+Implementation: `random.RandomTriangulation.randomDiscPack` +
+CommandStrParser `create` case 18. Regression test:
+`tests/RandomPackTest.java`
+(`java -cp "tests:out:cpcore.jar:jars/*" RandomPackTest`).
+
+---
+
 ## Welding
 
 ### "weld" canvas mode (mapping-pair cursor)

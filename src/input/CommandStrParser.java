@@ -1043,6 +1043,8 @@ public class CommandStrParser {
 					  mode=1;
 				  else if (type.startsWith("brooks_tor") || type.startsWith("BT"))
 					  mode=17;
+				  else if (type.startsWith("rand"))
+					  mode=18;
 				  else if (type.startsWith("hex_tor"))
 					  mode=12;
 				  else if (type.startsWith("hex") || type.startsWith("Hex"))
@@ -1416,6 +1418,44 @@ public class CommandStrParser {
 						  CirclePack.cpb.msg("brooks_torus: extender not "+
 								  "attached ("+ex.getMessage()+")");
 					  }
+				  }
+				  break;
+			  }
+			  case 18: // random N [bdryN]: Poisson points in the disc,
+				  		//   Delaunay, random eucl bdry radii, repack
+			  {
+				  int N=param;
+				  if (N==0) { // 'create random' with no count
+					  N=200;
+					  CirclePack.cpb.msg("create random: default N="+N);
+				  }
+				  int bdryN=0; // 0: randomDiscPack picks pi*sqrt(N)
+				  try {
+					  bdryN=Integer.parseInt(items.get(0));
+				  } catch (Exception ex) {}
+				  // -j {pct}: bdry radius jitter percentage
+				  double jitter=0.25;
+				  Iterator<Vector<String>> fit=flagSegs.iterator();
+				  while (fit.hasNext()) {
+					  Vector<String> fseg=fit.next();
+					  if (fseg.size()>0 && fseg.get(0).startsWith("-j")) {
+						  double pct=-1.0;
+						  try {
+							  pct=Double.parseDouble(fseg.get(1));
+						  } catch (Exception ex) {}
+						  if (pct<0.0 || pct>=100.0)
+							  CirclePack.cpb.errMsg("create random: usage "+
+									  "'-j {pct}', 0 <= pct < 100; "+
+									  "using default 25");
+						  else
+							  jitter=pct/100.0;
+					  }
+				  }
+				  newPack=random.RandomTriangulation.randomDiscPack(
+						  N,bdryN,jitter,false);
+				  if (newPack!=null) {
+					  jexecute(newPack,"repack");
+					  jexecute(newPack,"layout");
 				  }
 				  break;
 			  }
