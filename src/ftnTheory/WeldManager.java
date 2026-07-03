@@ -1218,6 +1218,10 @@ public class WeldManager extends PackExtender {
 				} // end of flag processing
 			} // end of while
 
+			if (qnum<0 || p2==null)
+				Oops("weld: no partner packing given; usage: "+
+						"weld -q{p} [v w] -f {mapfile} [-a] "+
+						"(-q names the pack to weld onto, e.g. -q1)");
 			int wans=weldUsingMap(p1,p2,v,w,-1,-1,filename,
 					script_flag,adjoin_flag);
 			if (wans>0 && adjoin_flag>0) {

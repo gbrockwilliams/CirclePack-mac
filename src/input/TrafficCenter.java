@@ -107,6 +107,7 @@ public class TrafficCenter {
 						CPBase.trafficCenter.parseCmdSeq(rP, depth, mycon);
 						ShellManager.processCmdResults(rP,mycon);
 					} catch (Exception ex) {
+						ex.printStackTrace(); // full trace to launch terminal
 						CirclePack.cpb.errMsg("'TrafficCenter' work thread error: "
 								+ ex.getMessage());
 					} finally {

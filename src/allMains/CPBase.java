@@ -242,8 +242,16 @@ public abstract class CPBase {
 			goodtogo=(t && q);
 		}
 		if (!goodtogo) {
-			System.err.println("Delaunay executables (triangle/qhull) not "+
-					"all available; only needed for random triangulations");
+			StringBuilder missing=new StringBuilder();
+			if (!new java.io.File(tmpdir,"triangle").exists() &&
+					!new java.io.File(tmpdir,"triangle.exe").exists())
+				missing.append(" triangle");
+			if (!new java.io.File(tmpdir,"qhull").exists() &&
+					!new java.io.File(tmpdir,"qhull.exe").exists())
+				missing.append(" qhull");
+			System.err.println("Delaunay executable(s) not bundled:"+
+					missing+"; only needed for random triangulations"+
+					" (plane needs triangle, sphere needs qhull)");
 		}
 		
 		scriptManager=null;
