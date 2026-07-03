@@ -1218,7 +1218,18 @@ public class WeldManager extends PackExtender {
 				} // end of flag processing
 			} // end of while
 
-			return weldUsingMap(p1,p2,v,w,-1,-1,filename,script_flag,adjoin_flag);
+			int wans=weldUsingMap(p1,p2,v,w,-1,-1,filename,
+					script_flag,adjoin_flag);
+			if (wans>0 && adjoin_flag>0) {
+				// weld operates on the extender's internal copies;
+				// expose the result the same way 'unweld' does
+				packOut=p1;
+				msg("weld: result ("+p1.nodeCount+" vertices) is in "+
+						"'packOut'; use '|cw| copy {pnum}' to put it "+
+						"in a pack, e.g. '|cw| copy 2', then "+
+						"'repack;layout;disp -w -c' there");
+			}
+			return wans;
 		}
 		
 		// ----------- unweld --------------
