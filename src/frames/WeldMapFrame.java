@@ -314,11 +314,16 @@ public class WeldMapFrame extends JFrame {
 						int at=1;
 						while (at<pts.size() && pts.get(at)[0]<xy[0])
 							at++;
-						// clamp y strictly between neighbors
+						// clamp BOTH coordinates strictly between the
+						// neighbors': the map must be strictly
+						// increasing (no vertical or horizontal runs)
+						double xlo=pts.get(at-1)[0]+MIN_GAP;
+						double xhi=pts.get(at)[0]-MIN_GAP;
 						double ylo=pts.get(at-1)[1]+MIN_GAP;
 						double yhi=pts.get(at)[1]-MIN_GAP;
-						if (ylo>yhi)
+						if (xlo>xhi || ylo>yhi)
 							return; // no room
+						xy[0]=Math.max(xlo,Math.min(xhi,xy[0]));
 						xy[1]=Math.max(ylo,Math.min(yhi,xy[1]));
 						pts.add(at,xy);
 						dragIdx=at;

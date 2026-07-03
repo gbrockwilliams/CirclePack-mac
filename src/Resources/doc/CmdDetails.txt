@@ -5106,16 +5106,33 @@ does 'repack', then reports the elapsed time.
 <command cmd="weldmap">
 <description>
 	Open the welding-map editor: a square canvas for building a
-	piecewise-linear increasing homeomorphism h of [0,1] onto
-	itself, drawn like a response curve. Left-click to add a
-	control point, drag to move one (coordinates are clamped
-	between the neighboring points', so the map always remains
+	piecewise-linear STRICTLY increasing homeomorphism h of [0,1]
+	onto itself, drawn like a response curve. Left-click to add a
+	control point, drag to move one (both coordinates are clamped
+	strictly between the neighboring points', so the graph can
+	never contain vertical or horizontal runs and the map remains
 	1-to-1), right-click to delete; the endpoints (0,0) and (1,1)
 	are fixed. Alternatively, type a formula in x (for example
 	"x+0.1*sin(2*Pi*x)"); it is sampled and normalized so that
 	h(0)=0 and h(1)=1, and must be strictly monotone. Save writes
 	the map in the PATH format read by the conformal welding
-	extender ('|cw| weld .. -f {file}').
+	extender; by default files go to the packings directory,
+	where '|cw| weld -f' looks for bare filenames.
+
+	Typical welding session ('|cw|' is the conformal-welding
+	extender; the attached packing is welded onto the '-q'
+	partner through h):
+
+	    seed 6;add_gen 6 6
+	    copy 1
+	    extender cw
+	    weldmap                    (draw h, Save as s.g)
+	    |cw| weld -q1 -f s.g -a
+	    |cw| copy 2                (result appears in pack p2)
+
+	then 'repack;layout;disp -w -c' on p2. Optional 'v w' between
+	'-q1' and '-f' give the starting boundary vertices on the two
+	packings (defaults: the first boundary vertex of each).
 </description>
 <seealso>
 <see>weld</see>

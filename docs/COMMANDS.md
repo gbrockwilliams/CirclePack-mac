@@ -131,11 +131,16 @@ which now also saves an `undo` snapshot.
 
 Brock's conformal-welding machinery (revived from the original C
 code) lives in the `CONFORMAL_WELDING` pack extender. Attach with
-`extender cw`, then:
+`extender cw` — **after** the packing is in place; the extender
+snapshots the attached pack at attach time. Commands:
 
-- `|cw| weld -q{p} v w -f {mapfile} -a` — weld the attached packing
-  onto pack p, matching the boundaries through a welding map
-  h: [0,1] → [0,1] read from the file (`-a` performs the adjoin).
+- `|cw| weld -q{p} [v w] -f {mapfile} -a` — weld the attached
+  packing onto pack p, matching the boundaries through a welding
+  map h: [0,1] → [0,1] read from the file (`-a` performs the
+  adjoin). `v w` are the starting boundary vertices on the two
+  packings; omit them to use the first boundary vertex of each.
+  **The result lands in `packOut`** — run `|cw| copy {pnum}` to
+  see it.
 - `|cw| findWM -q{q} v w n` / `|cw| writeHomeo {file}` — the inverse
   problem: recover the welding homeomorphism from two max packings.
 - `|cw| unweld {e..}` — cut a packing apart along an edge path.
@@ -143,16 +148,32 @@ code) lives in the `CONFORMAL_WELDING` pack extender. Attach with
   random N-gon inscribed in the circle, Delaunay-triangulated
   (Shewchuk's `triangle`, bundled for macOS) and max-packed.
 
+A complete session:
+
+```
+seed 6;add_gen 6 6
+copy 1                      ← partner packing into p1
+extender cw
+weldmap                     ← draw h, Save… as s.g
+|cw| weld -q1 -f s.g -a
+|cw| copy 2                 ← welded result → p2
+```
+
+then on p2: `repack;layout;disp -w -c`.
+
 ### `weldmap` — welding-map editor
 
 Opens a square-canvas editor for building the welding map, like a
 game-controller response curve. Left-click adds a control point,
-dragging moves one (coordinates are clamped between its neighbors',
-so the map always stays 1-to-1), right-click deletes; endpoints are
-fixed at (0,0) and (1,1). A formula in x can be entered instead
-(e.g. `x+0.1*sin(2*Pi*x)`) — it is sampled, normalized to h(0)=0,
-h(1)=1, and checked for strict monotonicity. **Save…** writes the
-`PATH x y ... END` file that `|cw| weld -f` reads.
+dragging moves one — both coordinates are clamped **strictly**
+between its neighbors', so the graph can never contain vertical or
+horizontal runs and the map stays 1-to-1. Right-click deletes;
+endpoints are fixed at (0,0) and (1,1). A formula in x can be
+entered instead (e.g. `x+0.1*sin(2*Pi*x)`) — it is sampled,
+normalized to h(0)=0, h(1)=1, and checked for strict monotonicity.
+**Save…** writes the `PATH x y ... END` file that `|cw| weld -f`
+reads, defaulting to the packings directory where bare filenames
+are looked up.
 
 ---
 
