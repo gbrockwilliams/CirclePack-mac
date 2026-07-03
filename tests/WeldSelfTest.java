@@ -33,6 +33,7 @@ public class WeldSelfTest {
 		scenario15_twoPackHypRefine();
 		scenario16_undoSnapshotIndependence();
 		scenario17_weldOntoCopy();
+		scenario18_weldWithMap();
 		System.out.println("\n==== failures: "+failures+" ====");
 	}
 
@@ -411,6 +412,84 @@ public class WeldSelfTest {
 		// mismatched arcs so the COPY gets refined (split) too
 		tryWeld2(p1,b1,clwFrom(p1,b1,9),p2,b2,cclwFrom(p2,b2,13),
 				false,"weld onto copyPackTo copy, refine 9 vs 13");
+	}
+
+	// partial-arc welds through a NON-identity welding map h:
+	// parameter x on arc 1 pairs with h(x) on arc 2
+	static void scenario18_weldWithMap() {
+		double[][] hmap= {{0.0,0.0},{0.3,0.6},{0.7,0.85},{1.0,1.0}};
+
+		// (a) mismatched arcs (4 vs 6 edges) with the map
+		{
+			PackData p1=PackCreation.hexBuild(4);
+			PackData p2=PackCreation.hexBuild(4);
+			int b1=firstBdry(p1);
+			int b2=firstBdry(p2);
+			int v1=b1,w1=clwFrom(p1,b1,4);
+			int v2=b2,w2=cclwFrom(p2,b2,6);
+			System.out.println("\n--- weld with map, arcs 4 vs 6");
+			try {
+				int n=WeldUtil.refineToMatch(p1,v1,w1,p2,v2,w2,hmap);
+				if (n<=0) {
+					System.out.println("  FAIL: refine returned "+n);
+					failures++;
+					return;
+				}
+				PackData np=PackData.adjoinCall(p1,p2,v1,v2,n);
+				np.packDCEL.fixDCEL(np);
+				checkCurves(np,"map weld 4v6 (n="+n+")");
+				CommandStrParser.jexecute(np,"repack");
+				CommandStrParser.jexecute(np,"layout");
+				checkCurves(np,"map weld 4v6 after repack");
+			} catch (Exception ex) {
+				System.out.println("  EXCEPTION: "+
+						ex.getClass().getSimpleName()+": "+ex.getMessage());
+				failures++;
+			}
+		}
+
+		// (b) EQUAL arc counts but non-identity map: h must still
+		// re-pair the vertices (insertions on both sides)
+		{
+			PackData p1=PackCreation.hexBuild(4);
+			PackData p2=PackCreation.hexBuild(4);
+			int b1=firstBdry(p1);
+			int b2=firstBdry(p2);
+			int v1=b1,w1=clwFrom(p1,b1,5);
+			int v2=b2,w2=cclwFrom(p2,b2,5);
+			System.out.println("\n--- weld with map, arcs 5 vs 5");
+			try {
+				int n=WeldUtil.refineToMatch(p1,v1,w1,p2,v2,w2,hmap);
+				if (n<=0) {
+					System.out.println("  FAIL: refine returned "+n);
+					failures++;
+					return;
+				}
+				System.out.println("  refined 5/5 -> "+n+
+						" (map re-pairs, may insert)");
+				PackData np=PackData.adjoinCall(p1,p2,v1,v2,n);
+				np.packDCEL.fixDCEL(np);
+				checkCurves(np,"map weld 5v5 (n="+n+")");
+				CommandStrParser.jexecute(np,"repack");
+				CommandStrParser.jexecute(np,"layout");
+				checkCurves(np,"map weld 5v5 after repack");
+			} catch (Exception ex) {
+				System.out.println("  EXCEPTION: "+
+						ex.getClass().getSimpleName()+": "+ex.getMessage());
+				failures++;
+			}
+		}
+
+		// (c) evalPL sanity
+		double[][] id= {{0,0},{1,1}};
+		if (Math.abs(WeldUtil.evalPL(id,0.37)-0.37)>1e-12 ||
+				Math.abs(WeldUtil.evalPL(hmap,0.3)-0.6)>1e-12 ||
+				Math.abs(WeldUtil.evalPL(hmap,0.15)-0.3)>1e-12) {
+			System.out.println("  FAIL: evalPL values wrong");
+			failures++;
+		}
+		else
+			System.out.println("  OK   evalPL identity/interp values");
 	}
 
 	static int firstBdry(PackData p) {

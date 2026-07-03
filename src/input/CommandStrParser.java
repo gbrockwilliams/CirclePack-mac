@@ -5106,6 +5106,119 @@ public class CommandStrParser {
 		  return 1;
 	  }
 
+	  // ========= weld_arcs ========
+	  // Weld a bdry arc of this packing to a bdry arc of another
+	  // (or of itself), optionally through a welding map. Usage:
+	  //   weld_arcs v1 w1 -q{q} v2 w2 [-f {mapfile}]
+	  // Arc 1 runs CLOCKWISE v1->w1 on this packing, arc 2 runs
+	  // COUNTERCLOCKWISE v2->w2 on pack q ('adjoin' conventions;
+	  // w==v means the full bdry component). The map h:[0,1]->[0,1]
+	  // (PATH file, e.g. from 'weldmap') matches parameter x on
+	  // arc 1 with h(x) on arc 2; identity if no -f. Result lands
+	  // in this pack's slot; seam is in vlist. 'undo' reverts.
+	  if (cmd.startsWith("weld_arcs")) {
+		  int qnum=-1;
+		  int v1=0,w1=0,v2=0,w2=0;
+		  String mapfile=null;
+		  for (int fsi=0;fsi<flagSegs.size();fsi++) {
+			  items=flagSegs.get(fsi);
+			  String str=items.get(0);
+			  if (str.startsWith("-q")) {
+				  qnum=StringUtil.qFlagParse(str);
+				  try {
+					  v2=Integer.parseInt(items.get(1));
+					  w2=Integer.parseInt(items.get(2));
+				  } catch (Exception ex) {
+					  throw new ParserException("usage: weld_arcs "+
+							  "v1 w1 -q{q} v2 w2 [-f {mapfile}]");
+				  }
+			  }
+			  else if (str.startsWith("-f")) {
+				  mapfile=items.get(1).trim();
+			  }
+			  else if (!str.startsWith("-")) {
+				  try {
+					  v1=Integer.parseInt(items.get(0));
+					  w1=Integer.parseInt(items.get(1));
+				  } catch (Exception ex) {
+					  throw new ParserException("usage: weld_arcs "+
+							  "v1 w1 -q{q} v2 w2 [-f {mapfile}]");
+				  }
+			  }
+		  }
+		  if (v1<=0 || w1<=0 || qnum<0 || v2<=0 || w2<=0)
+			  throw new ParserException("usage: weld_arcs v1 w1 "+
+					  "-q{q} v2 w2 [-f {mapfile}]");
+		  PackData qData=CPBase.cpDrawing[qnum].getPackData();
+		  if (qData==null || !qData.status)
+			  throw new ParserException("weld_arcs: pack p"+qnum+
+					  " is empty");
+		  if (qData!=packData && qData.hes!=packData.hes)
+			  throw new ParserException("weld_arcs: packings have "+
+					  "different geometries; convert one first");
+		  if (!packData.isBdry(v1) || !packData.isBdry(w1) ||
+				  !qData.isBdry(v2) || !qData.isBdry(w2))
+			  throw new ParserException("weld_arcs: all four "+
+					  "vertices must be boundary vertices");
+
+		  // welding map, if given
+		  double[][] hmap=null;
+		  if (mapfile!=null) {
+			  java.awt.geom.Path2D.Double gp=
+					  panels.PathManager.readpath(mapfile,false);
+			  if (gp==null)
+				  throw new ParserException("weld_arcs: could not "+
+						  "read weldmap file '"+mapfile+"'");
+			  hmap=packing.WeldUtil.mapFromPath(gp);
+		  }
+
+		  java.util.ArrayList<Integer> arc1=
+				  packing.WeldUtil.arcClw(packData,v1,w1);
+		  java.util.ArrayList<Integer> arc2=
+				  packing.WeldUtil.arcCclw(qData,v2,w2);
+		  if (arc1==null || arc2==null)
+			  throw new ParserException("weld_arcs: arc endpoints "+
+					  "not on a common bdry component");
+		  int en1=arc1.size()-1;
+		  int en2=arc2.size()-1;
+
+		  int mypnum=packData.packNum;
+		  // undo snapshot: copies, refinement mutates in place
+		  if (packData!=qData)
+			  PackUndo.save("weld_arcs",new int[] {mypnum,qnum},
+					  new PackData[] {packData.copyPackTo(),
+							  qData.copyPackTo()},null);
+		  else
+			  PackUndo.save("weld_arcs",new int[] {mypnum},
+					  new PackData[] {packData.copyPackTo()},null);
+
+		  if (en1!=en2 || hmap!=null) {
+			  en1=packing.WeldUtil.refineToMatch(packData,v1,w1,
+					  qData,v2,w2,hmap);
+			  if (en1<=0) {
+				  CirclePack.cpb.errMsg("weld_arcs: boundary "+
+						  "refinement failed ('undo' restores)");
+				  return 0;
+			  }
+		  }
+		  PackData newPack=PackData.adjoinCall(packData,qData,v1,v2,en1);
+		  if (newPack==null) {
+			  CirclePack.cpb.errMsg("weld_arcs: adjoin failed "+
+					  "('undo' restores)");
+			  return 0;
+		  }
+		  newPack.packDCEL.fixDCEL(newPack);
+		  PackData pdata=CirclePack.cpb.swapPackData(newPack,mypnum,true);
+		  jexecute(pdata,"repack");
+		  jexecute(pdata,"layout");
+		  jexecute(pdata,"disp -w -c");
+		  CirclePack.cpb.msg("weld_arcs: done; result in p"+mypnum+
+				  " ("+pdata.nodeCount+" vertices), seam in vlist"+
+				  ((hmap!=null)?", welding map applied":"")+
+				  "; 'undo' reverts");
+		  return pdata.nodeCount;
+	  }
+
 	  // ========= write_custom ======
 
 	  if (cmd.startsWith("write_cus") || cmd.startsWith("Write_cus")) {

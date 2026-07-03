@@ -241,6 +241,7 @@ vert_order
 vlist [options] 
 weld {p} {q} {v} {w} [options] 
 weld_map {p} {q} {v} {w} {filename} [-gm] 
+weld_arcs v1 w1 -q{q} v2 w2 [-f {mapfile}] 
 weldmap 
 write -[AcdegirRzZavloftmMy] {filename} 
 Write -[AcgirzavloftTmMy] {filename} 

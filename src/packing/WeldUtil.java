@@ -29,6 +29,70 @@ import komplex.EdgeSimple;
  */
 public class WeldUtil {
 
+	/**
+	 * Evaluate the piecewise-linear map given by control points
+	 * 'map' (each {x,y}, strictly increasing in both coordinates,
+	 * running (0,0) to (1,1)) at x.
+	 * @param map double[][]
+	 * @param x double
+	 * @return double h(x)
+	 */
+	public static double evalPL(double[][] map,double x) {
+		if (x<=map[0][0])
+			return map[0][1];
+		for (int k=1;k<map.length;k++) {
+			if (x<=map[k][0]) {
+				double t=(x-map[k-1][0])/(map[k][0]-map[k-1][0]);
+				return map[k-1][1]+t*(map[k][1]-map[k-1][1]);
+			}
+		}
+		return map[map.length-1][1];
+	}
+
+	/**
+	 * Convert a 'PATH x y .. END' path (as read by
+	 * 'PathManager.readpath', the welding-map file format) into
+	 * PL control points for 'evalPL': the points are normalized
+	 * so both coordinates run 0 to 1, and must then be strictly
+	 * increasing.
+	 * @param path Path2D.Double
+	 * @return double[][], or null if path is null
+	 * @throws DataException if the map is not strictly increasing
+	 */
+	public static double[][] mapFromPath(java.awt.geom.Path2D.Double path) {
+		if (path==null)
+			return null;
+		ArrayList<double[]> pl=new ArrayList<double[]>();
+		java.awt.geom.PathIterator pit=path.getPathIterator(null);
+		double[] c=new double[6];
+		while (!pit.isDone()) {
+			int typ=pit.currentSegment(c);
+			if (typ==java.awt.geom.PathIterator.SEG_MOVETO ||
+					typ==java.awt.geom.PathIterator.SEG_LINETO)
+				pl.add(new double[] {c[0],c[1]});
+			pit.next();
+		}
+		int n=pl.size();
+		if (n<2)
+			throw new DataException("weld map: fewer than 2 points");
+		double x0=pl.get(0)[0];
+		double xs=pl.get(n-1)[0]-x0;
+		double y0=pl.get(0)[1];
+		double ys=pl.get(n-1)[1]-y0;
+		if (Math.abs(xs)<1e-12 || Math.abs(ys)<1e-12)
+			throw new DataException("weld map: degenerate range");
+		double[][] map=new double[n][2];
+		for (int k=0;k<n;k++) {
+			map[k][0]=(pl.get(k)[0]-x0)/xs;
+			map[k][1]=(pl.get(k)[1]-y0)/ys;
+		}
+		for (int k=1;k<n;k++)
+			if (map[k][0]<=map[k-1][0] || map[k][1]<=map[k-1][1])
+				throw new DataException("weld map: not strictly "+
+						"increasing at point "+k);
+		return map;
+	}
+
 	// snap tolerance: a domain and range coordinate are "matched"
 	//   if they differ by less than this fraction of the smaller
 	//   of the two edges currently being traversed.
@@ -167,6 +231,30 @@ public class WeldUtil {
 	 */
 	public static int refineToMatch(PackData p1,int v1,int w1,
 			PackData p2,int v2,int w2) {
+		return refineToMatch(p1,v1,w1,p2,v2,w2,null);
+	}
+
+	/**
+	 * As 'refineToMatch', but matching through a welding map h:
+	 * the point at (normalized arc-length) parameter x on arc 1
+	 * is welded to the point at parameter h(x) on arc 2. 'hmap'
+	 * gives h by its piecewise-linear control points
+	 * {{0,0},..,{1,1}}, strictly increasing in both coordinates
+	 * (see 'evalPL'); null means the identity map. Since h is
+	 * strictly increasing, arc 1's mapped coordinates stay in
+	 * order and the merge walk is unchanged — h only changes
+	 * which points pair up.
+	 * @param p1 PackData
+	 * @param v1 int
+	 * @param w1 int
+	 * @param p2 PackData
+	 * @param v2 int
+	 * @param w2 int
+	 * @param hmap double[][], PL control points, or null (identity)
+	 * @return int, common edge count after refinement, 0 on error
+	 */
+	public static int refineToMatch(PackData p1,int v1,int w1,
+			PackData p2,int v2,int w2,double[][] hmap) {
 		ArrayList<Integer> arc1=arcClw(p1,v1,w1);
 		ArrayList<Integer> arc2=arcCclw(p2,v2,w2);
 		if (arc1==null || arc2==null)
@@ -174,6 +262,9 @@ public class WeldUtil {
 					"weld: arc endpoints not on a common bdry component");
 		double[] s=arcCoords(p1,arc1);
 		double[] t=arcCoords(p2,arc2);
+		if (hmap!=null) // push arc 1's coordinates through h
+			for (int i=0;i<s.length;i++)
+				s[i]=evalPL(hmap,s[i]);
 		int m=arc1.size()-1; // edge counts
 		int n=arc2.size()-1;
 

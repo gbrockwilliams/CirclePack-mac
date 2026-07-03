@@ -127,6 +127,26 @@ public class WeldMapFrame extends JFrame {
 		instance.toFront();
 	}
 
+	/**
+	 * The map currently shown in the editor, as PL control points
+	 * for 'WeldUtil.evalPL' — or null when the editor is closed or
+	 * shows the plain identity (just the two fixed endpoints).
+	 * Lets the interactive weld mode pick up the on-screen map.
+	 * @return double[][] or null
+	 */
+	public static double[][] currentMap() {
+		if (instance==null || !instance.isVisible() ||
+				instance.pts.size()<=2)
+			return null;
+		double[][] map=new double[instance.pts.size()][2];
+		for (int k=0;k<instance.pts.size();k++) {
+			double[] p=instance.pts.get(k);
+			map[k][0]=p[0];
+			map[k][1]=p[1];
+		}
+		return map;
+	}
+
 	void identityReset() {
 		pts.clear();
 		pts.add(new double[] {0.0,0.0});

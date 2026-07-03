@@ -124,6 +124,28 @@ Right-click cancels and leaves the mode. `undo` reverts a completed
 weld — including the refinement, on **both** packings if two were
 involved.
 
+**Welding maps in weld mode**: if the `weldmap` editor is open (and
+showing more than the identity), its map h governs the matching —
+the point at arc-length parameter x on arc 1 welds to the point at
+parameter h(x) on arc 2. The confirmation dialog says when a map is
+being applied. Close the editor (or reset it to identity) for plain
+arc-length matching.
+
+### `weld_arcs v1 w1 -q{q} v2 w2 [-f {mapfile}]`
+
+The scriptable version of weld mode: welds the **clockwise** arc
+v1→w1 of the current packing to the **counterclockwise** arc v2→w2
+of pack q (same conventions as `adjoin`; w=v means the whole
+boundary component; q may be the current pack for a self-weld).
+With `-f`, the welding map from the PATH file governs the matching;
+without it, plain arc-length (identity) matching. Both boundaries
+are refined so every vertex has a partner. The result replaces the
+current packing, the seam is in `vlist`, and `undo` reverts.
+
+```
+weld_arcs 20 35 -q1 20 23 -f s.g
+```
+
 The non-interactive equivalent is Ken's `adjoin p q v w n` command,
 which now also saves an `undo` snapshot.
 

@@ -243,14 +243,27 @@ public class WELDmode extends MyCanvasMode {
 				PackUndo.save("weld",new int[] {pack1},
 						new PackData[] {p1.copyPackTo()},null);
 
-			if (n1!=n2) {
+			// a welding map showing in the open 'weldmap' editor is
+			// applied: parameter x on arc 1 welds to h(x) on arc 2
+			double[][] hmap=null;
+			try {
+				hmap=frames.WeldMapFrame.currentMap();
+			} catch (Throwable t) {} // headless
+			if (n1!=n2 || hmap!=null) {
+				StringBuilder q=new StringBuilder();
+				if (n1!=n2)
+					q.append("The arcs have "+n1+" and "+n2+
+							" edges.\n");
+				if (hmap!=null)
+					q.append("The welding map from the 'weldmap' "+
+							"editor ("+hmap.length+" points) will "+
+							"govern the matching.\n");
+				q.append("Refine the boundaries to weld?\n(New "+
+						"vertices are interpolated by arc length in "+
+						"each packing's current geometry.)");
 				int ans=JOptionPane.showConfirmDialog(
-						PackControl.activeFrame,
-						"The arcs have "+n1+" and "+n2+" edges. Refine "+
-						"the boundaries so they match?\n(New vertices are "+
-						"interpolated by arc length in each packing's "+
-						"current geometry.)",
-						"Weld: arcs differ",
+						PackControl.activeFrame,q.toString(),
+						"Weld: refine boundaries",
 						JOptionPane.YES_NO_OPTION);
 				if (ans!=JOptionPane.YES_OPTION) {
 					PackUndo.clear(); // nothing changed
@@ -258,7 +271,7 @@ public class WELDmode extends MyCanvasMode {
 					aW.setDefaultMode();
 					return;
 				}
-				n1=WeldUtil.refineToMatch(p1,v1,w1,p2,v2,w2);
+				n1=WeldUtil.refineToMatch(p1,v1,w1,p2,v2,w2,hmap);
 				if (n1<=0) {
 					cancel(aW,null);
 					CirclePack.cpb.errMsg(
@@ -267,7 +280,8 @@ public class WELDmode extends MyCanvasMode {
 					return;
 				}
 				CirclePack.cpb.msg("weld: boundaries refined; arcs now "+
-						"have "+n1+" edges each");
+						"have "+n1+" edges each"+
+						((hmap!=null)?" (welding map applied)":""));
 			}
 
 			PackData newPack=PackData.adjoinCall(p1,p2,v1,v2,n1);

@@ -5103,6 +5103,42 @@ does 'repack', then reports the elapsed time.
 </options>
 </command>
 
+<command cmd="weld_arcs" flags="v1 w1 -q{q} v2 w2 [-f {mapfile}]">
+<description>
+	Weld a boundary arc of the current packing to a boundary arc
+	of pack q (which may be the same packing), optionally through
+	a welding map. Arc 1 runs CLOCKWISE from v1 to w1 on this
+	packing; arc 2 runs COUNTERCLOCKWISE from v2 to w2 on pack q
+	(the 'adjoin' conventions; v1 is identified with v2 and w1
+	with w2, and w=v means the full boundary component). The two
+	packings must have the same geometry.
+
+	Each arc is parameterized by arc length, scaled to [0,1]. The
+	welding map h, a strictly increasing homeomorphism of [0,1]
+	read from the PATH file named by -f (see 'weldmap' for an
+	editor), matches the point at parameter x on arc 1 with the
+	point at parameter h(x) on arc 2; boundary vertices are
+	refined on both sides so every vertex has a partner. With no
+	-f the identity map is used (plain arc-length matching).
+
+	The result replaces the current packing; the seam vertices
+	are in vlist, and 'undo' reverts both packings. This is the
+	scriptable version of the interactive "weld" canvas mode,
+	which applies the map showing in the open 'weldmap' editor.
+</description>
+<examples>
+<instance text="weld_arcs 20 35 -q1 20 23 -f s.g">
+	weld the clockwise arc 20-35 of this packing to the
+	counterclockwise arc 20-23 of p1 through the map in s.g
+	</instance>
+</examples>
+<seealso>
+<see>weldmap</see>
+<see>adjoin</see>
+<see>undo</see>
+</seealso>
+</command>
+
 <command cmd="weldmap">
 <description>
 	Open the welding-map editor: a square canvas for building a
