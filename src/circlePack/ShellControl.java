@@ -160,7 +160,11 @@ public class ShellControl extends CPBase {
 //		p.cpDrawing=CPBase.cpDrawing[pnum]; 
 //		p.cpDrawing.setPackData(p);
 		
-		CPBase.packings[pnum]=p; 
+		// install in slot; without this a pack carrying the orphan
+		// sentinel packNum=NUM_PACKS crashes the next swap-based
+		// command (PackControl.swapPackData sets it the same way)
+		p.packNum=pnum;
+		CPBase.packings[pnum]=p;
 		return p;
 	}
 	
