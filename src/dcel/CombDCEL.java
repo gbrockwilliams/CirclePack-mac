@@ -3733,7 +3733,15 @@ public class CombDCEL {
 	   */
 	  public static PackDCEL adjoin(PackDCEL pdc1,PackDCEL pdc2,
 			  int v1,int v2, int n) {
-		  
+
+		  // 'adjoin' absorbs 'pdc2' into the result, modifying its
+		  // 'vertIndx's, 'halfedge's, etc., so work on a clone and
+		  // leave the caller's copy intact (indices are preserved,
+		  // so 'v2' and the returned 'oldNew' are unaffected). A
+		  // self-adjoin (pdc2==pdc1) must NOT clone.
+		  if (pdc2!=pdc1)
+			  pdc2=CombDCEL.cloneDCEL(pdc2);
+
 		  // 'he1/2' to be identified: clw from 'v1', cclw from 'v2'
 		  HalfEdge he1=pdc1.vertices[v1].halfedge.twin.next.twin;
 		  HalfEdge he2=pdc2.vertices[v2].halfedge; // DCELdebug.printBouquet(pdc2);

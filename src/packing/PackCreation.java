@@ -1278,8 +1278,9 @@ public class PackCreation {
 		int v1=blink.get(i);
 		p1.packDCEL=CombDCEL.adjoin(p1.packDCEL,
 				p2.packDCEL,v1,v2,n);
+		p1.vertexMap=p1.packDCEL.oldNew; // capture before 'fixDCEL' clears it
 		p1.packDCEL.fixDCEL(p1);
-		
+
 		int centerV=p1.vertexMap.findW(1);
 
 		// adjust blink
@@ -1789,6 +1790,7 @@ public class PackCreation {
 			fusionA.packDCEL=CombDCEL.adjoin(fusionA.packDCEL,
 					holdA.packDCEL,4,1,currentHeight);
 			fusionA.vertexMap=fusionA.packDCEL.oldNew;
+			fusionA.packDCEL.fixDCEL(fusionA); // update counts before bdry walk
 			if (!reNumBdry(fusionA,1,baseWidth+currentWidth,currentHeight))
 				throw new CombException("failed [C A]");
 			// transfer non-zero marks
@@ -1804,6 +1806,7 @@ public class PackCreation {
 			lower.packDCEL=CombDCEL.adjoin(lower.packDCEL,
 					holdB.packDCEL,4,1,baseHeight);
 			lower.vertexMap=lower.packDCEL.oldNew;
+			lower.packDCEL.fixDCEL(lower); // update counts before bdry walk
 			if (!reNumBdry(lower,1,baseWidth+currentWidth,baseHeight))
 				throw new CombException("failed [D B]");
 			// transfer non-zero marks
@@ -1818,6 +1821,7 @@ public class PackCreation {
 			fusionA.packDCEL=CombDCEL.adjoin(fusionA.packDCEL,
 					lower.packDCEL,3,4,baseWidth+currentWidth);
 			fusionA.vertexMap=fusionA.packDCEL.oldNew;
+			fusionA.packDCEL.fixDCEL(fusionA); // update counts before bdry walk
 			if (!reNumBdry(fusionA,1,baseWidth+currentWidth,baseHeight+currentHeight))
 				throw new CombException("failed [C A/D B]");
 			// transfer non-zero marks
@@ -1834,6 +1838,7 @@ public class PackCreation {
 			fusionB.packDCEL=CombDCEL.adjoin(fusionB.packDCEL,
 					holdC.packDCEL, 4, 1,currentHeight);
 			fusionB.vertexMap=fusionB.packDCEL.oldNew;
+			fusionB.packDCEL.fixDCEL(fusionB); // update counts before bdry walk
 			if (!reNumBdry(fusionB,1,currentWidth +baseWidth,currentHeight))
 				throw new CombException("failed [A C]");
 			// transfer non-zero marks
@@ -1850,6 +1855,7 @@ public class PackCreation {
 			fusionC.packDCEL=CombDCEL.adjoin(fusionC.packDCEL,
 					holdA.packDCEL,3,4,currentWidth);
 			fusionC.vertexMap=fusionC.packDCEL.oldNew;
+			fusionC.packDCEL.fixDCEL(fusionC); // update counts before bdry walk
 			if (!reNumBdry(fusionC,1,currentWidth,baseHeight+currentHeight))
 				throw new CombException("failed [B/A]");
 			// transfer non-zero marks
