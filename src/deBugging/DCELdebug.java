@@ -706,7 +706,7 @@ public class DCELdebug {
 			try {
 				if (rtrace.twinRed!=null)
 					strbld.append("    ["+rtrace.myEdge+"]/["+rtrace.twinRed.myEdge+"] ->");
-				else 
+				else
 					strbld.append("    ["+rtrace.myEdge+"] ->");
 				// is this a "blue" face?
 				if (rtrace.nextRed.myEdge.next==rtrace.myEdge.prev) {
@@ -715,7 +715,11 @@ public class DCELdebug {
 				else strbld.append("\n");
 
 				rtrace=rtrace.nextRed;
-			} catch (Exception ex) {}
+			} catch (Exception ex) {
+				// rtrace didn't advance -- break rather than spin forever
+				strbld.append("    [redChainDetail: exception walking redChain, "+ex.getMessage()+"]\n");
+				break;
+			}
 		} while (rtrace!=pdcel.redChain);
 		
 		// do by side pairs
@@ -745,7 +749,9 @@ public class DCELdebug {
 						}
 						else strbld.append("\n");
 					}
-				} catch (Exception ex) {}
+				} catch (Exception ex) {
+					strbld.append("    [redChainDetail: exception walking side pair, "+ex.getMessage()+"]\n");
+				}
 			}
 		}
 

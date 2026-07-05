@@ -242,7 +242,9 @@ public class ProjStruct extends PackExtender {
 						torusData.affCoeff.toString()+
 						"; Teichmuller parameter 't' = "+
 						torusData.teich.toString());
-			} catch(Exception ex){}
+			} catch(Exception ex){
+				CirclePack.cpb.errMsg("tD: failed to report some torus data, "+ex.getMessage());
+			}
 			return 1;
 		}
 		

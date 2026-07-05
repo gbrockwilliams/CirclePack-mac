@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.Random;
 
 import allMains.CPBase;
+import allMains.CirclePack;
 import circlePack.PackControl;
 import exceptions.InOutException;
 
@@ -115,8 +116,11 @@ public class PostManager {
 			throw new InOutException("failed to open tmp 'bodyFile'");
 		}
 		
-		// open 'postFactory' to accept input to 'bodyFile'
+		// open 'postFactory' to accept input to 'bodyFile'; when adding
+		// to a still-open file (modes 2/3), don't lose an earlier write failure
+		boolean priorFail=(mode!=1 && pF!=null && pF.writeFailed);
 		pF=new PostFactory();
+		pF.writeFailed=priorFail;
 		pF.fp=fp;
 		CommandStrParser.pF=pF;
 		textBuffer=null; 
@@ -142,6 +146,8 @@ public class PostManager {
 	  } catch (Exception ex) {
 		  throw new InOutException("problem closing postscript: "+ex.getMessage());
 	  }
+	  if (pF!=null && pF.writeFailed)
+		  CirclePack.cpb.errMsg("postscript file "+postFilename+": one or more writes failed; the file may be incomplete");
 	  fp=null;
 	  pF=null; // close 'PostFactory'
 	  CommandStrParser.pF=null;

@@ -3247,7 +3247,9 @@ public class CombDCEL {
 		try {
 			pdc.alpha=edges[pdc.alpha.edgeIndx];
 			pdc.gamma=edges[pdc.gamma.edgeIndx];
-		} catch(Exception ex) {}
+		} catch(Exception ex) {
+			CirclePack.cpb.errMsg("reorient: failed to reset alpha/gamma, "+ex.getMessage());
+		}
 		
 		// reverse redchain
 		if (pdc.redChain!=null) {

@@ -1034,7 +1034,9 @@ public class PackCreation {
 
 		try {
 			pent.packDCEL.layoutPacking();
-		} catch(Exception ex) {}
+		} catch(Exception ex) {
+			CirclePack.cpb.errMsg("pentagon creation: layoutPacking failed, "+ex.getMessage());
+		}
 		
 		double mod=pent.getCenter(2).abs();
 		for (int v=1;v<=pent.nodeCount;v++) {
@@ -1091,7 +1093,9 @@ public class PackCreation {
 
 		try {
 			heap.packDCEL.layoutPacking();
-		} catch(Exception ex) {}
+		} catch(Exception ex) {
+			CirclePack.cpb.errMsg("heap creation: layoutPacking failed, "+ex.getMessage());
+		}
 		
 		double mod=heap.getCenter(3).abs();
 		for (int v=1;v<=heap.nodeCount;v++) {
@@ -1153,8 +1157,10 @@ public class PackCreation {
 		triPent.repack_call(1000);
 
 		try {
-			triPent.packDCEL.layoutPacking();  
-		} catch(Exception ex) {}
+			triPent.packDCEL.layoutPacking();
+		} catch(Exception ex) {
+			CirclePack.cpb.errMsg("triPent creation: layoutPacking failed, "+ex.getMessage());
+		}
 		
 		double mod=triPent.getCenter(2).abs();
 		for (int v=1;v<=triPent.nodeCount;v++) {
@@ -1204,7 +1210,9 @@ public class PackCreation {
 
 		try {
 			quadPent.packDCEL.layoutPacking();
-		} catch(Exception ex) {}
+		} catch(Exception ex) {
+			CirclePack.cpb.errMsg("quadPent creation: layoutPacking failed, "+ex.getMessage());
+		}
 		
 		double mod=quadPent.getCenter(2).abs();
 		for (int v=1;v<=quadPent.nodeCount;v++) {

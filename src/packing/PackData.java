@@ -236,7 +236,9 @@ public class PackData{
     	fileName=StringUtil.dc2name(fileName);
     	try {
     		fillcurves();
-    	} catch(Exception ex) {}
+    	} catch(Exception ex) {
+    		CirclePack.cpb.errMsg("attachDCEL: fillcurves failed, "+ex.getMessage());
+    	}
     	return pdcel.vertCount;
     }
     
@@ -2321,7 +2323,9 @@ public class PackData{
 			}
 			file.write("</svg>\n</body>\n</html>\n");
 			file.close();
-		}catch(Exception ex) {}
+		}catch(Exception ex) {
+			flashError("svg export: exception in writing the file.");
+		}
 
 		return count;
 	}

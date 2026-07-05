@@ -42,7 +42,11 @@ public class PostFactory {
 	BufferedWriter fp; // RandomAccessFile fp;
 	static final double DEGPI=180/Math.PI;
 	static final int MAX_BOTTOM_TEXT_LENGTH=300;
-	
+
+	// set true if any write to 'fp' fails; checked/reported once by
+	// 'PostManager.close_psfile' so a bad postscript file isn't mistaken for success
+	public boolean writeFailed=false;
+
 	// Constructor
 	public PostFactory() {
 		fp=null;
@@ -188,7 +192,7 @@ public class PostFactory {
 				fp.write(postRGB(bcol)+z.x+" "+z.y+" "+rad+" cc \n");
 			else fp.write(z.x+" "+z.y+" "+rad+" c\n");
 			if (tx>0) fp.write(" gr\n");
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 	}
 
 	/**
@@ -203,7 +207,7 @@ public class PostFactory {
 			if (hes>0) postCircle(hes,z,Math.PI/2.0);
 			else postCircle(hes,z,1.0);
 			fp.write(" gr\n");
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 		return 1;
 	}
 	
@@ -225,7 +229,7 @@ public class PostFactory {
 			if (col!=null) // fill with given color
 				fp.write(" gs"+postRGBsrgb(col)+" fill gr ");
 			fp.write(" s\n");
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 		return 1;
 	}
 	
@@ -289,7 +293,7 @@ public class PostFactory {
 			}
 			fp.write(" s gr\n");
 			return 1;
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 		return 1;
 	}
 
@@ -576,20 +580,20 @@ public class PostFactory {
 	public void postIndex(Complex z,int n) {
 		try {
 			fp.write(new String(z.x+" "+z.y+" moveto\n("+n+")show\n"));
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 	}
 	
 	public void postStr(Complex z,String str) {
 		try {
 			fp.write(new String(z.x+" "+z.y+" moveto\n("+str+")show\n"));
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 	}
 	
 	public void postLine(int hes,Complex z,Complex w) {
 		// TODO: have to do other geometries
 		try {
 			if (hes==0) fp.write("n "+z.x+" "+z.y+" moveto\n"+w.x+" "+w.y+" l  s\n");
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 	}
 	
 	/**
@@ -732,7 +736,7 @@ public class PostFactory {
 	public void postColorTrinket(Complex z,double diam,Color color) {
 		try {
 			fp.write(new String(postRGB(color)+diam+" "+diam+"  "+z.x+" "+z.y+" mark\n"));
-		} catch (IOException iox) {}
+		} catch (IOException iox) { writeFailed=true; }
 	}
 	
 	/* Place a predefined 'trinket' shape in postscript file, position and
@@ -799,8 +803,8 @@ public class PostFactory {
 	/** For opening/closing postscript file code when you want to limit effects 
 	 * of the code.
 	 */
-	public void postGSave() {try { fp.write(" gs ");}catch(Exception ex){}}	
-	public void postGRestore()  {try { fp.write(" gr ");}catch(Exception ex){}}
+	public void postGSave() {try { fp.write(" gs ");}catch(Exception ex){writeFailed=true;}}
+	public void postGRestore()  {try { fp.write(" gr ");}catch(Exception ex){writeFailed=true;}}
 
 	/**
 	 * If a postscript file is open, reset its linewidth to n*PS_UNIT_LINEWIDTH.
@@ -810,7 +814,7 @@ public class PostFactory {
 		if (n<0 || n>12) return;
 		try {
 			fp.write(new String((double)(n*PostManager.PS_UNIT_LINEWIDTH)+" ourlinewidth\n"));
-		} catch(IOException iox) {}
+		} catch(IOException iox) { writeFailed=true; }
 		
 	}
 	

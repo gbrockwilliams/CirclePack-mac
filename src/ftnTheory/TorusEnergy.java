@@ -207,10 +207,12 @@ public class TorusEnergy extends PackExtender {
 		cpCommand(extenderPD,"color -c d");
 		energy=getEnergy(extenderPD);
 		if (flag) {
-			extenderPD.fillcurves(); 
+			extenderPD.fillcurves();
 			try {
-				extenderPD.packDCEL.layoutPacking(); 
-			} catch(Exception ex) {}
+				extenderPD.packDCEL.layoutPacking();
+			} catch(Exception ex) {
+				CirclePack.cpb.errMsg("TorusEnergy.reset: layoutPacking failed, "+ex.getMessage());
+			}
 			cpCommand("set_screen -a");
 			cpCommand("disp -wr");
 			return 1;
