@@ -249,7 +249,9 @@ public class RiemHilbert extends PackExtender {
 	}
 	
 	public int linkPackCurves() {
-		return linkPackCurves(extenderPD.bdryStarts[1]);
+		// 0 is invalid, so 'linkPackCurves' falls back to the
+		// first bdry vertex ('bdryStarts' is not set on DCEL packs)
+		return linkPackCurves(0);
 	}
 	
 	/**
@@ -261,7 +263,8 @@ public class RiemHilbert extends PackExtender {
 	 */
 	public int linkPackCurves(int v) {
 		NodeLink bdrylist=null;
-		if (!extenderPD.status || (bdrylist=new NodeLink(extenderPD,"b"))==null) {
+		if (!extenderPD.status || (bdrylist=new NodeLink(extenderPD,"b"))==null
+				|| bdrylist.size()==0) { // e.g. a sphere or torus
 			CirclePack.cpb.myErrorMsg("RiemHilbert: the packing does not have boundary");
 			return 0;
 		}
@@ -271,7 +274,8 @@ public class RiemHilbert extends PackExtender {
 			restCurves.add(defaultCurve);
 		}
 		if (v<0 || v>extenderPD.nodeCount || !extenderPD.isBdry(v)) {
-			v=extenderPD.bdryStarts[1];
+			// first bdry vertex ('bdryStarts' is not set on DCEL packs)
+			v=bdrylist.get(0);
 		}
 
 		/* proceed around the boundary; use as many curves as needed, clone
@@ -445,7 +449,7 @@ public class RiemHilbert extends PackExtender {
 				if (v!=0 && extenderPD.isBdry(v))
 					return linkPackCurves(v);
 			} catch (Exception ex) {}
-			return linkPackCurves(extenderPD.bdryStarts[1]);
+			return linkPackCurves(0); // falls back to first bdry vertex
 		}
 		
 		// ============= draw_curves ===========

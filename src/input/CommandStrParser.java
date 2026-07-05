@@ -756,13 +756,14 @@ public class CommandStrParser {
 	    	  int pnum1=Integer.parseInt((String)items.get(0));
 	    	  int pnum2=Integer.parseInt((String)items.get(1));
 
-	    	  if (pnum1<0 || pnum1>=CPBase.NUM_PACKS 
-	    			  || !CPBase.cpDrawing[pnum1].getPackData().status 
-	    			  || pnum2<0 || pnum2>=CPBase.NUM_PACKS 
-	    			  || !CPBase.cpDrawing[pnum2].getPackData().status) 
+	    	  // use 'packings' (not 'cpDrawing', null when headless)
+	    	  if (pnum1<0 || pnum1>=CPBase.NUM_PACKS
+	    			  || !CPBase.packings[pnum1].status
+	    			  || pnum2<0 || pnum2>=CPBase.NUM_PACKS
+	    			  || !CPBase.packings[pnum2].status)
 	    		  throw new ParserException("illegal or inactive packings specified");
-	    	  packData=CPBase.cpDrawing[pnum1].getPackData(); // where the final pack will go
-	    	  PackData qackData=CPBase.cpDrawing[pnum2].getPackData();
+	    	  packData=CPBase.packings[pnum1]; // where the final pack will go
+	    	  PackData qackData=CPBase.packings[pnum2];
 	    	  
 	    	  int v1=NodeLink.grab_one_vert(packData,(String)items.get(2));
 	    	  int v2=NodeLink.grab_one_vert(qackData,(String)items.get(3));
@@ -5194,10 +5195,12 @@ public class CommandStrParser {
 				  }
 			  }
 		  }
-		  if (v1<=0 || w1<=0 || qnum<0 || v2<=0 || w2<=0)
+		  if (v1<=0 || w1<=0 || qnum<0 || qnum>=CPBase.NUM_PACKS
+				  || v2<=0 || w2<=0)
 			  throw new ParserException("usage: weld_arcs v1 w1 "+
 					  "-q{q} v2 w2 [-f {mapfile}]");
-		  PackData qData=CPBase.cpDrawing[qnum].getPackData();
+		  // 'packings' (not 'cpDrawing', null when headless)
+		  PackData qData=CPBase.packings[qnum];
 		  if (qData==null || !qData.status)
 			  throw new ParserException("weld_arcs: pack p"+qnum+
 					  " is empty");
@@ -6021,6 +6024,10 @@ public class CommandStrParser {
 	   		  //     (let add_layer check validity)
 	   		  try {
 	   			  NodeLink vertlist=new NodeLink(packData,items);
+	   			  // NodeLink silently drops invalid entries
+	   			  if (vertlist.size()<2)
+	   				  throw new DataException(
+	   						  "usage: add_layer needs two valid vertices");
 	   			  v1=(Integer)vertlist.get(0);
 	   			  v2=(Integer)vertlist.get(1);
 	   		  } catch (NumberFormatException nfe) {
@@ -8912,9 +8919,17 @@ public class CommandStrParser {
 	    	  	}
 	    	  	try {
 	    	  		if (cutVert) { // puncture a vertex
-	    	  			pv=NodeLink.grab_one_vert(packData,flagSegs); 
-	    	  			if (pv<=0)
-	    	  				pv=packData.nodeCount; // default to max index
+	    	  			// note spec now: NodeLink parsing consumes 'items'
+	    	  			String vspec=(items.size()>0)?items.get(0):null;
+	    	  			pv=NodeLink.grab_one_vert(packData,flagSegs);
+	    	  			if (pv<=0) {
+	    	  				// an explicit spec that failed? don't
+	    	  				// silently puncture some other vertex
+	    	  				if (vspec!=null)
+	    	  					throw new ParserException("puncture: '"+
+	    	  							vspec+"' is not a valid vertex");
+	    	  				pv=packData.nodeCount; // no spec: default to max index
+	    	  			}
 	    	  			count +=pv;
 	    	  			if (packData.puncture_vert(pv)==0) 
 	    	  				return 0;
@@ -8923,9 +8938,11 @@ public class CommandStrParser {
 	    	  		else { // puncture a face
 	    	  			pf=FaceLink.grab_one_face(packData,flagSegs);
 	    	  			count+=pf;
-	    	  			if (packData.puncture_face(pf)==0) 
+	    	  			if (packData.puncture_face(pf)==0)
 	    	  				return 0;
 	    	  		}
+	    	  	} catch (ParserException pex) {
+	    	  		throw pex; // invalid explicit spec: report it as such
 	    	  	} catch (Exception ex) {
 	    	  		CirclePack.cpb.errMsg("attemp to puncture at "+pv+" went wrong.");
 	    	  		return 0;

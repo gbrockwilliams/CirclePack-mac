@@ -1768,6 +1768,8 @@ public class PackDCEL {
 	 * @return boolean
 	 */
 	public boolean isBdry(int v) {
+		if (v<1 || v>vertCount || vertices[v]==null)
+			return false; // not a vertex at all
 		HalfEdge he=vertices[v].halfedge;
 		if (he.twin.face!=null && he.twin.face.faceIndx<0)
 			return true;

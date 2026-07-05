@@ -941,6 +941,10 @@ public class PackData{
 	 * @return int index, -1 on problem
 	 */
 	public int nghb(int v,int w) {
+		if (packDCEL==null || v<1 || v>packDCEL.vertCount
+				|| w<1 || w>packDCEL.vertCount
+				|| packDCEL.vertices[v]==null)
+			return -1;
 		HalfEdge vhe=packDCEL.vertices[v].halfedge;
 		HalfEdge he=vhe;
 		int j=0;

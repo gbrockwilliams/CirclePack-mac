@@ -16,6 +16,10 @@ public class WeldSelfTest {
 	static int failures=0;
 
 	public static void main(String[] args) {
+		// core code messages through CirclePack.cpb; leaving it
+		// null made scenario4's sphere repack NPE ("expected
+		// failure" until 2026-07-05)
+		allMains.CirclePack.cpb=new circlePack.ShellControl();
 		scenario1_commonStart();
 		scenario2_commonEnd();
 		scenario3_disjointArcs();
