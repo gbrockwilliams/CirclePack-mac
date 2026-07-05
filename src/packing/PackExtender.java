@@ -58,6 +58,12 @@ public abstract class PackExtender {
 	
 	// Constructor
 	public PackExtender(PackData p) {
+		// Nearly every derived constructor reads pack data, and an
+		// empty or unloaded packing crashes them in assorted ways;
+		// throwing here stops the derived constructor from running.
+		if (p==null || !p.status || p.nodeCount<3)
+			throw new ExtenderException("cannot attach a pack "+
+					"extender: packing is empty or not loaded");
 		extenderPD=p;
 		pdc=p.packDCEL;
 		cpDrawing=p.cpDrawing;

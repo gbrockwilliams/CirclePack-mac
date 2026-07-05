@@ -1734,10 +1734,11 @@ public class CommandStrParser {
 	    				  }
 	    			  }
 	    			  
-	    			  packData.cpDrawing.updateXtenders();
+	    			  if (packData.cpDrawing!=null) // null when headless
+	    				  packData.cpDrawing.updateXtenders();
 	    			  return 1;
 	    		  }
-	    		  
+
 	    		  // restart (i.e., kill and then restart)
 	    		  else if (stg!=null && stg.startsWith("-r")) {
 	    			  items.remove(0);
@@ -1748,7 +1749,8 @@ public class CommandStrParser {
 	    					  px.killMe();
 	    				  }
 	    			  }
-	    			  packData.cpDrawing.updateXtenders();
+	    			  if (packData.cpDrawing!=null) // null when headless
+	    				  packData.cpDrawing.updateXtenders();
 	    		  }
 	    		  
 	    		  // may be no flag, just the abbreviation
@@ -2143,7 +2145,7 @@ public class CommandStrParser {
 		    	  }
 	    	  }
 	    	  
-	    	  if (returnVal==1)
+	    	  if (returnVal==1 && packData.cpDrawing!=null) // null when headless
 				  packData.cpDrawing.updateXtenders();
 
 	    	  } // end of hard-coded cases
@@ -2172,6 +2174,11 @@ public class CommandStrParser {
 	    			  } catch (IllegalAccessException e) {
 	    				  e.printStackTrace();
 	    			  } catch (InvocationTargetException e) {
+	    				  // constructor itself threw (e.g. the empty-pack
+	    				  // guard in 'PackExtender'); tell the user why
+	    				  if (e.getCause()!=null)
+	    					  CirclePack.cpb.errMsg("extender failed: "+
+	    							  e.getCause().getMessage());
 	    				  e.printStackTrace();
 	    			  } catch (NoSuchMethodException e) {
 	    				  e.printStackTrace();
@@ -2182,7 +2189,8 @@ public class CommandStrParser {
 	    			  CirclePack.cpb.msg("Pack "+packData.packNum+
 	    					  ": started "+px.extensionAbbrev+" extender");
 	    			  px.StartUpMsg();
-	    			  packData.cpDrawing.updateXtenders();
+	    			  if (packData.cpDrawing!=null) // null when headless
+	    				  packData.cpDrawing.updateXtenders();
 	    			  returnVal=1;
 	    		  }
 	    	  }
